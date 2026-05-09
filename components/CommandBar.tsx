@@ -2,7 +2,6 @@
 import { useState, useRef } from "react";
 import { useCopilotChat } from "@copilotkit/react-core";
 import { TextMessage, MessageRole } from "@copilotkit/runtime-client-gql";
-import { useMicLevel } from "@/hooks/useMicLevel";
 
 interface Props {
   overlays: { id: string; type: string }[];
@@ -11,6 +10,13 @@ interface Props {
   onToggleVoice: () => void;
   isVoiceSupported: boolean;
 }
+
+const QUICK_ACTIONS: { emoji: string; label: string; prompt: string }[] = [
+  { emoji: "👤", label: "Lower third",   prompt: "Add a lower third with my name as Andres, subtitle Founder of Pixalia" },
+  { emoji: "📊", label: "Metrics",       prompt: "Add Q4 metrics: revenue $1.2M (+24%), users 18K (+12%), churn 2.1% (-0.4%)" },
+  { emoji: "🎯", label: "Progress 73%",  prompt: "Add a progress bar at 73% with label Demo Loading" },
+  { emoji: "✨", label: "Keywords",      prompt: "Highlight keywords AI, growth, demo with auto color" },
+];
 
 export default function CommandBar({
   overlays,
@@ -23,9 +29,6 @@ export default function CommandBar({
   const [isLoading, setIsLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const { appendMessage, isLoading: chatLoading } = useCopilotChat();
-  // AudioContext only when NOT listening — running both simultaneously
-  // causes the Speech Recognition service to lose the audio stream and restart.
-  const micLevels = useMicLevel(!isListening);
 
   const busy = isLoading || chatLoading;
 
@@ -45,8 +48,43 @@ export default function CommandBar({
     inputRef.current?.focus();
   };
 
+  const fireQuickAction = async (prompt: string) => {
+    if (busy) return;
+    setIsLoading(true);
+    try {
+      await appendMessage(new TextMessage({ content: prompt, role: MessageRole.User }));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const showQuickActions = overlays.length === 0 && !isListening;
+
   return (
     <div className="absolute bottom-0 left-0 right-0 z-30 px-4 pb-4 pt-2">
+      {showQuickActions && (
+        <div className="mb-2 flex flex-wrap items-center gap-2 justify-center">
+          <span className="text-white/40 text-[10px] uppercase tracking-[0.2em] font-mono mr-1">
+            Try
+          </span>
+          {QUICK_ACTIONS.map((qa, i) => (
+            <button
+              key={qa.label}
+              type="button"
+              onClick={() => fireQuickAction(qa.prompt)}
+              disabled={busy}
+              className="group flex items-center gap-1.5 bg-black/55 hover:bg-black/75 backdrop-blur-md border border-white/15 hover:border-white/30 text-white/80 hover:text-white text-xs font-mono px-3 py-1.5 rounded-full transition-all disabled:opacity-40 idle-bob"
+              style={{
+                animationDelay: `${600 + i * 220}ms`,
+                boxShadow: "0 0 16px rgba(167, 139, 250, 0.12)",
+              }}
+            >
+              <span className="text-sm">{qa.emoji}</span>
+              <span>{qa.label}</span>
+            </button>
+          ))}
+        </div>
+      )}
       <form
         onSubmit={handleSubmit}
         className="flex items-center gap-2 bg-black/75 backdrop-blur-xl border border-white/20 rounded-2xl px-4 py-2.5 shadow-[0_0_40px_rgba(0,0,0,0.6)]"

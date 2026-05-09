@@ -12,6 +12,7 @@ import OverlayLayer from "@/components/OverlayLayer";
 import CommandBar from "@/components/CommandBar";
 import LiveCaptions from "@/components/LiveCaptions";
 import HudClock from "@/components/HudClock";
+import AmbientParticles from "@/components/AmbientParticles";
 // Real A2UI catalog object: createCatalog() is invoked at module load,
 // registering all 12 component renderers against the typed Zod definitions.
 // Currently exposed for future <A2UIRenderer/> use; runtime stays AG-UI.
@@ -31,6 +32,88 @@ export default function Home() {
       <LiveStage />
     </CopilotKit>
   );
+}
+
+/**
+ * Normalize agent-provided props for a given overlay type. Runs on both
+ * add_overlay (full props) and modify_overlay (merged props), so a partial
+ * update can't poison the existing overlay's shape.
+ */
+function normalizeProps(type: string, props: Record<string, unknown>): Record<string, unknown> {
+  const out = { ...props };
+
+  if (type === "KeywordHighlight") {
+    const kws = out.keywords;
+    if (typeof kws === "string") {
+      out.keywords = kws.split(",").map((s) => s.trim()).filter(Boolean);
+    } else if (Array.isArray(kws)) {
+      out.keywords = kws.map((k: unknown) =>
+        typeof k === "string" ? k : (k as Record<string, string>)?.text ?? String(k)
+      );
+    }
+  }
+
+  if (type === "FloatingChart" && Array.isArray(out.data)) {
+    out.data = (out.data as unknown[])
+      .map((d) => (typeof d === "number" ? d : Number((d as Record<string, unknown>)?.value ?? d)))
+      .filter((n) => Number.isFinite(n));
+  }
+
+  if (type === "MetricsPanel") {
+    const raw = out.metrics;
+    out.metrics = Array.isArray(raw)
+      ? (raw as unknown[])
+          .map((m) => {
+            if (!m || typeof m !== "object") return null;
+            const r = m as Record<string, unknown>;
+            if (typeof r.label !== "string") return null;
+            return {
+              label: r.label,
+              value: typeof r.value === "string" ? r.value : String(r.value ?? ""),
+              delta:
+                r.delta == null
+                  ? undefined
+                  : typeof r.delta === "string"
+                  ? r.delta
+                  : String(r.delta),
+            };
+          })
+          .filter(Boolean)
+      : [];
+  }
+
+  if (type === "Timeline") {
+    const raw = out.steps;
+    out.steps = Array.isArray(raw)
+      ? (raw as unknown[])
+          .map((s) => {
+            if (typeof s === "string") return { label: s };
+            if (s && typeof s === "object") {
+              const label = (s as Record<string, unknown>).label;
+              if (typeof label === "string") return { label };
+            }
+            return null;
+          })
+          .filter(Boolean)
+      : [];
+    const cs = out.currentStep;
+    out.currentStep = typeof cs === "number" ? cs : Number(cs ?? 0) || 0;
+  }
+
+  if (type === "Ticker") {
+    const raw = out.items;
+    if (typeof raw === "string") {
+      out.items = raw.split(",").map((s) => s.trim()).filter(Boolean);
+    } else if (Array.isArray(raw)) {
+      out.items = (raw as unknown[]).map((it) =>
+        typeof it === "string" ? it : (it as Record<string, string>)?.text ?? String(it)
+      );
+    } else {
+      out.items = [];
+    }
+  }
+
+  return out;
 }
 
 function LiveStage() {
@@ -101,28 +184,12 @@ function LiveStage() {
         console.error("Invalid props JSON:", propsStr);
         return;
       }
-      // Normalize KeywordHighlight: keywords may arrive as [{text:"..."}, ...] or "word1, word2"
-      if (type === "KeywordHighlight") {
-        const kws = props.keywords;
-        if (typeof kws === "string") {
-          props.keywords = kws.split(",").map((s: string) => s.trim());
-        } else if (Array.isArray(kws)) {
-          props.keywords = kws.map((k: unknown) =>
-            typeof k === "string" ? k : (k as Record<string, string>)?.text ?? String(k)
-          );
-        }
-      }
-      // Normalize FloatingChart: data may arrive as [{value:n}, ...]
-      if (type === "FloatingChart" && Array.isArray(props.data)) {
-        props.data = (props.data as unknown[]).map((d) =>
-          typeof d === "number" ? d : Number((d as Record<string, unknown>)?.value ?? d)
-        );
-      }
+      const normalized = normalizeProps(type, props);
       setOverlays((prev) => {
         const filtered = prev.filter((o) => o.id !== id);
         return [
           ...filtered,
-          { id, type, position: position as OverlayPosition, props } as OverlaySpec,
+          { id, type, position: position as OverlayPosition, props: normalized } as OverlaySpec,
         ];
       });
     },
@@ -154,9 +221,12 @@ function LiveStage() {
         return;
       }
       setOverlays((prev) =>
-        prev.map((o) =>
-          o.id === id ? ({ ...o, props: { ...o.props, ...newProps } } as OverlaySpec) : o
-        )
+        prev.map((o) => {
+          if (o.id !== id) return o;
+          const merged = { ...(o.props as Record<string, unknown>), ...newProps };
+          const normalized = normalizeProps(o.type, merged);
+          return { ...o, props: normalized } as OverlaySpec;
+        })
       );
     },
   });
@@ -283,6 +353,9 @@ function LiveStage() {
     >
       {/* Layer 0: webcam */}
       <WebcamFeed />
+
+      {/* Layer 0.5: ambient floating particles when voice is active */}
+      <AmbientParticles active={isListening} />
 
       {/* Layer 1: A2UI overlay components */}
       <OverlayLayer overlays={overlays} />

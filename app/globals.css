@@ -3,6 +3,16 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  /* Brand palette — used by overlays for accents, gradients, glows. */
+  --c-cyan: #38bdf8;
+  --c-violet: #a78bfa;
+  --c-fuchsia: #e879f9;
+  --c-rose: #fb7185;
+  --c-amber: #fbbf24;
+  --c-lime: #a3e635;
+  --c-emerald: #34d399;
+  --c-sky: #60a5fa;
 }
 
 @theme inline {
@@ -139,3 +149,104 @@ body {
   mix-blend-mode: overlay;
   pointer-events: none;
 }
+
+/* ─────────────────────────────────────────────────────────────
+   Energy pass — extra keyframes & utilities
+   ───────────────────────────────────────────────────────────── */
+
+/* Ring ripple radiates outward (LiveBadge, milestones) */
+@keyframes ring-ripple {
+  0%   { transform: scale(0.95); opacity: 0.7; }
+  100% { transform: scale(2.2);  opacity: 0; }
+}
+.ring-ripple { animation: ring-ripple 1.6s cubic-bezier(0, 0.55, 0.45, 1) infinite; }
+
+/* Idle bob — subtle vertical float for chips, badges */
+@keyframes idle-bob {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-3px); }
+}
+.idle-bob { animation: idle-bob 2.6s ease-in-out infinite; }
+
+/* Digit-roll — flips a single character vertically when it changes */
+@keyframes digit-roll {
+  0%   { transform: translateY(-100%); opacity: 0; }
+  60%  { opacity: 1; }
+  100% { transform: translateY(0);     opacity: 1; }
+}
+.digit-roll { animation: digit-roll 360ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+
+/* Sparkle — tiny twinkling stars (StatRing ≥85%, milestone burst) */
+@keyframes sparkle {
+  0%, 100% { transform: scale(0);   opacity: 0; }
+  50%      { transform: scale(1);   opacity: 1; }
+}
+.sparkle { animation: sparkle 1.4s ease-in-out infinite; }
+
+/* Particle drift — ambient floating dots when voice is active */
+@keyframes particle-drift {
+  0%   { transform: translate(0, 0)            scale(0.7); opacity: 0; }
+  20%  {                                                   opacity: 0.7; }
+  100% { transform: translate(var(--dx, 20px), -110vh) scale(1); opacity: 0; }
+}
+.particle { animation: particle-drift var(--dur, 8s) linear var(--delay, 0s) infinite; }
+
+/* Cycling-hue gradient — smoothly rotates colors across a fill */
+@keyframes hue-cycle {
+  0%   { background-position:   0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+.hue-cycle {
+  background: linear-gradient(
+    90deg,
+    var(--c-cyan), var(--c-violet), var(--c-fuchsia),
+    var(--c-rose), var(--c-amber), var(--c-cyan)
+  );
+  background-size: 200% 100%;
+  animation: hue-cycle 6s linear infinite;
+}
+
+/* Underline sweep — left → right reveal */
+@keyframes underline-sweep {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+.underline-sweep {
+  transform-origin: left center;
+  animation: underline-sweep 600ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+/* Milestone burst — radiating glow halo (BigCounter, StatRing 100%) */
+@keyframes milestone-burst {
+  0%   { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.6); }
+  100% { box-shadow: 0 0 0 32px rgba(255, 255, 255, 0); }
+}
+.milestone-burst { animation: milestone-burst 900ms ease-out both; }
+
+/* Bounce-arrow — small bounce for delta direction icons */
+@keyframes arrow-bounce-up {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-3px); }
+}
+@keyframes arrow-bounce-down {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(3px); }
+}
+.arrow-bounce-up   { animation: arrow-bounce-up   1.4s ease-in-out infinite; }
+.arrow-bounce-down { animation: arrow-bounce-down 1.4s ease-in-out infinite; }
+
+/* Gradient text helper */
+.gradient-text {
+  background: linear-gradient(135deg, var(--g-from, #fff) 0%, var(--g-to, #38bdf8) 100%);
+  -webkit-background-clip: text;
+          background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Typing dots — three dots that bounce sequentially (ChatBubble) */
+@keyframes typing-dot {
+  0%, 80%, 100% { transform: translateY(0);    opacity: 0.4; }
+  40%           { transform: translateY(-3px); opacity: 1; }
+}
+.typing-dot { animation: typing-dot 1.2s ease-in-out infinite; }

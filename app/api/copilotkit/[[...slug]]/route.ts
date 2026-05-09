@@ -4,15 +4,23 @@ import {
   InMemoryAgentRunner,
   BuiltInAgent,
 } from "@copilotkit/runtime/v2";
-import { anthropic } from "@ai-sdk/anthropic";
+import { google } from "@ai-sdk/google";
 import { SYSTEM_PROMPT } from "@/lib/system-prompt";
 
 const runtime = new CopilotRuntime({
   agents: {
     default: new BuiltInAgent({
-      model: anthropic("claude-haiku-4-5"),
-      apiKey: process.env.ANTHROPIC_API_KEY,
+      // gemini-2.5-flash-lite: ~40% faster TTFT than 2.5-flash, same AG-UI
+      // tool-call story, no Gemini-3.x thought_signature requirement.
+      model: google("gemini-2.5-flash-lite"),
+      apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
       prompt: SYSTEM_PROMPT,
+      // Voice → single response from Gemini that emits all tool calls at
+      // once (frontend handlers don't return data the model needs to "see").
+      // No internal roundtrip needed — keeps each utterance to one model call.
+      maxSteps: 1,
+      // Lower temp = faster decoding + more deterministic tool selection.
+      temperature: 0,
     }),
   },
   runner: new InMemoryAgentRunner(),
