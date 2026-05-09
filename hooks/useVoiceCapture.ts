@@ -1,0 +1,148 @@
+"use client";
+import { useCallback, useEffect, useRef, useState } from "react";
+
+// Web Speech API types — not in all TS DOM lib versions
+interface SpeechRecognitionEvent extends Event {
+  resultIndex: number;
+  results: SpeechRecognitionResultList;
+}
+interface SpeechRecognitionErrorEvent extends Event {
+  error: string;
+}
+interface SpeechRecognitionInstance extends EventTarget {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  start(): void;
+  stop(): void;
+  onstart: (() => void) | null;
+  onaudiostart: (() => void) | null;
+  onspeechstart: (() => void) | null;
+  onresult: ((e: SpeechRecognitionEvent) => void) | null;
+  onend: (() => void) | null;
+  onerror: ((e: SpeechRecognitionErrorEvent) => void) | null;
+}
+type SpeechRecognitionConstructor = new () => SpeechRecognitionInstance;
+
+function getSR(): SpeechRecognitionConstructor | undefined {
+  if (typeof window === "undefined") return undefined;
+  return (
+    (window as unknown as { SpeechRecognition?: SpeechRecognitionConstructor })
+      .SpeechRecognition ??
+    (window as unknown as { webkitSpeechRecognition?: SpeechRecognitionConstructor })
+      .webkitSpeechRecognition
+  );
+}
+
+export interface VoiceCaptureState {
+  isListening: boolean;
+  interimTranscript: string;
+  speechStatus: string;
+  lastError: string;   // persists even when status cycles — tells us the real failure
+  isSupported: boolean;
+  startListening: () => void;
+  stopListening: () => void;
+}
+
+export function useVoiceCapture(
+  onFinalResult: (text: string) => void
+): VoiceCaptureState {
+  const [isListening, setIsListening] = useState(false);
+  const [interimTranscript, setInterimTranscript] = useState("");
+  const [speechStatus, setSpeechStatus] = useState("idle");
+  const [lastError, setLastError] = useState("");
+  const [isSupported, setIsSupported] = useState(false);
+  const restartTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
+  const isListeningRef = useRef(false);
+  const onFinalRef = useRef(onFinalResult);
+  onFinalRef.current = onFinalResult;
+
+  useEffect(() => {
+    const SR = getSR();
+    setIsSupported(!!SR);
+    if (!SR) {
+      setSpeechStatus("not supported");
+      return;
+    }
+
+    const recognition = new SR();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = "en-US";
+
+    // Pipeline stages — each one logs so we know exactly where it breaks
+    recognition.onstart = () => setSpeechStatus("started — waiting for audio…");
+    recognition.onaudiostart = () => setSpeechStatus("audio received — speak now");
+    recognition.onspeechstart = () => setSpeechStatus("speech detected…");
+
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
+      let interim = "";
+      let final = "";
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const result = event.results[i];
+        const text = result[0].transcript;
+        if (result.isFinal) final += text;
+        else interim += text;
+      }
+      setSpeechStatus("recognizing…");
+      setInterimTranscript(interim);
+      if (final.trim()) {
+        setInterimTranscript("");
+        setSpeechStatus("sent ✓");
+        onFinalRef.current(final.trim());
+      }
+    };
+
+    recognition.onend = () => {
+      if (isListeningRef.current) {
+        // 600ms pause before restarting — stops the crazy rapid cycling and
+        // gives the status text time to be readable between attempts
+        setSpeechStatus("restarting…");
+        restartTimerRef.current = setTimeout(() => {
+          if (isListeningRef.current) {
+            try { recognition.start(); } catch { /* ignore */ }
+          }
+        }, 600);
+      } else {
+        setSpeechStatus("idle");
+      }
+    };
+
+    recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+      // lastError persists so rapid cycling can't overwrite it before user reads it
+      setLastError(event.error);
+      setSpeechStatus(`error: ${event.error}`);
+      if (event.error === "not-allowed" || event.error === "service-not-allowed") {
+        isListeningRef.current = false;
+        setIsListening(false);
+      }
+    };
+
+    recognitionRef.current = recognition;
+    return () => {
+      isListeningRef.current = false;
+      if (restartTimerRef.current) clearTimeout(restartTimerRef.current);
+      recognition.stop();
+    };
+  }, []);
+
+  useEffect(() => {
+    isListeningRef.current = isListening;
+    const rec = recognitionRef.current;
+    if (!rec) return;
+    if (isListening) {
+      setSpeechStatus("connecting…");
+      try { rec.start(); } catch { /* already running */ }
+    } else {
+      rec.stop();
+      setInterimTranscript("");
+      setSpeechStatus("idle");
+    }
+  }, [isListening]);
+
+  const startListening = useCallback(() => setIsListening(true), []);
+  const stopListening = useCallback(() => setIsListening(false), []);
+
+  return { isListening, interimTranscript, speechStatus, lastError, isSupported, startListening, stopListening };
+}

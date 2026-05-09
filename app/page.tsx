@@ -4,10 +4,15 @@ import { CopilotKit } from "@copilotkit/react-core";
 import {
   useCopilotReadable,
   useCopilotAction,
+  useCopilotChat,
 } from "@copilotkit/react-core";
+import { TextMessage, MessageRole } from "@copilotkit/runtime-client-gql";
 import WebcamFeed from "@/components/WebcamFeed";
 import OverlayLayer from "@/components/OverlayLayer";
 import CommandBar from "@/components/CommandBar";
+import LiveCaptions from "@/components/LiveCaptions";
+import { useVoiceCapture } from "@/hooks/useVoiceCapture";
+import { useRecorder } from "@/hooks/useRecorder";
 import type { OverlaySpec, OverlayPosition } from "@/lib/types";
 
 export default function Home() {
@@ -20,6 +25,18 @@ export default function Home() {
 
 function LiveStage() {
   const [overlays, setOverlays] = useState<OverlaySpec[]>([]);
+  const [lastSent, setLastSent] = useState("");
+  const { appendMessage } = useCopilotChat();
+  const { isRecording, startRecording, stopRecording } = useRecorder();
+
+  const { isListening, interimTranscript, speechStatus, lastError, isSupported, startListening, stopListening } =
+    useVoiceCapture((text) => {
+      if (text.split(/\s+/).length < 2) return;
+      setLastSent(text);
+      appendMessage(
+        new TextMessage({ content: `[VOICE] ${text}`, role: MessageRole.User })
+      );
+    });
 
   // AG-UI Shared State: agent always knows what's currently on screen
   useCopilotReadable({
@@ -137,7 +154,7 @@ function LiveStage() {
   // A2UI Action: remove an overlay
   useCopilotAction({
     name: "remove_overlay",
-    description: "Remove an overlay from the video by id. Use 'all' to clear everything.",
+    description: "Remove an overlay from the video by id. Use 'all' to remove every overlay.",
     parameters: [
       {
         name: "id",
@@ -163,16 +180,42 @@ function LiveStage() {
       {/* Layer 1: A2UI overlay components */}
       <OverlayLayer overlays={overlays} />
 
-      {/* Layer 2: command bar */}
+      {/* Layer 2: live voice captions (above overlays, below command bar) */}
+      <LiveCaptions text={interimTranscript} lastSent={lastSent} speechStatus={speechStatus} lastError={lastError} isListening={isListening} />
+
+      {/* Layer 3: command bar */}
       <CommandBar
         overlays={overlays.map((o) => ({ id: o.id, type: o.type }))}
         onClear={() => setOverlays([])}
+        isListening={isListening}
+        onToggleVoice={() => (isListening ? stopListening() : startListening())}
+        isVoiceSupported={isSupported}
       />
 
-      {/* Branding */}
-      <div className="absolute top-3 right-4 z-10 flex items-center gap-2 pointer-events-none">
-        <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse shadow-[0_0_8px_#ef4444]" />
-        <span className="text-white/60 text-xs font-mono tracking-widest uppercase">LiveStage</span>
+      {/* Top-right controls: branding + record */}
+      <div className="absolute top-3 right-4 z-30 flex items-center gap-3">
+        {/* Record toggle */}
+        <button
+          onClick={() => (isRecording ? stopRecording() : startRecording())}
+          className={`flex items-center gap-1.5 text-xs font-mono uppercase tracking-widest px-3 py-1.5 rounded-full transition-all ${
+            isRecording
+              ? "bg-red-600 text-white animate-pulse"
+              : "bg-white/10 text-white/50 hover:bg-white/20 hover:text-white/80 border border-white/10"
+          }`}
+        >
+          <span
+            className={`w-2 h-2 rounded-full ${isRecording ? "bg-white" : "bg-red-500"}`}
+          />
+          {isRecording ? "Stop" : "Rec"}
+        </button>
+
+        {/* LiveStage branding */}
+        <div className="flex items-center gap-2 pointer-events-none">
+          <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse shadow-[0_0_8px_#ef4444]" />
+          <span className="text-white/60 text-xs font-mono tracking-widest uppercase">
+            LiveStage
+          </span>
+        </div>
       </div>
     </div>
   );

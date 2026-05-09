@@ -2,17 +2,30 @@
 import { useState, useRef } from "react";
 import { useCopilotChat } from "@copilotkit/react-core";
 import { TextMessage, MessageRole } from "@copilotkit/runtime-client-gql";
+import { useMicLevel } from "@/hooks/useMicLevel";
 
 interface Props {
   overlays: { id: string; type: string }[];
   onClear: () => void;
+  isListening: boolean;
+  onToggleVoice: () => void;
+  isVoiceSupported: boolean;
 }
 
-export default function CommandBar({ overlays, onClear }: Props) {
+export default function CommandBar({
+  overlays,
+  onClear,
+  isListening,
+  onToggleVoice,
+  isVoiceSupported,
+}: Props) {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const { appendMessage, isLoading: chatLoading } = useCopilotChat();
+  // AudioContext only when NOT listening — running both simultaneously
+  // causes the Speech Recognition service to lose the audio stream and restart.
+  const micLevels = useMicLevel(!isListening);
 
   const busy = isLoading || chatLoading;
 
@@ -38,7 +51,7 @@ export default function CommandBar({ overlays, onClear }: Props) {
         onSubmit={handleSubmit}
         className="flex items-center gap-2 bg-black/75 backdrop-blur-xl border border-white/20 rounded-2xl px-4 py-2.5 shadow-[0_0_40px_rgba(0,0,0,0.6)]"
       >
-        {/* active overlays indicator */}
+        {/* Active overlays indicator */}
         {overlays.length > 0 && (
           <div className="flex gap-1.5 items-center shrink-0">
             {overlays.slice(0, 4).map((o) => (
@@ -50,7 +63,9 @@ export default function CommandBar({ overlays, onClear }: Props) {
               </span>
             ))}
             {overlays.length > 4 && (
-              <span className="text-[10px] text-white/40 font-mono">+{overlays.length - 4}</span>
+              <span className="text-[10px] text-white/40 font-mono">
+                +{overlays.length - 4}
+              </span>
             )}
             <div className="w-px h-4 bg-white/20 mx-1" />
           </div>
@@ -61,9 +76,11 @@ export default function CommandBar({ overlays, onClear }: Props) {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder={
-            busy
+            isListening
+              ? "Listening to your voice…"
+              : busy
               ? "Agent thinking..."
-              : 'Try: "Add a lower third with my name" or "Remove all overlays"'
+              : 'Try: "Add a lower third with my name" or "Remove all"'
           }
           disabled={busy}
           className="flex-1 bg-transparent text-white placeholder:text-white/30 text-sm outline-none font-mono"
@@ -80,6 +97,43 @@ export default function CommandBar({ overlays, onClear }: Props) {
           </button>
         )}
 
+        {/* Voice toggle */}
+        {isVoiceSupported && (
+          <button
+            type="button"
+            onClick={onToggleVoice}
+            title={isListening ? "Stop listening" : "Start voice mode"}
+            className={`shrink-0 w-8 h-8 rounded-xl flex items-center justify-center transition-all ${
+              isListening
+                ? "bg-green-500/20 text-green-400 border border-green-500/40"
+                : "bg-white/5 text-white/40 hover:bg-white/10 hover:text-white/70 border border-white/10"
+            }`}
+          >
+            {isListening ? (
+              // CSS-animated bars while listening (no AudioContext — avoids Speech API conflict)
+              <div className="flex items-end justify-center gap-px w-full h-full py-1.5">
+                {[14, 8, 18, 10].map((max, i) => (
+                  <div
+                    key={i}
+                    className="w-[3px] bg-green-400 rounded-full"
+                    style={{
+                      height: `${max}px`,
+                      animation: `voice-bar ${0.7 + i * 0.13}s ease-in-out infinite alternate`,
+                      animationDelay: `${i * 0.08}s`,
+                    }}
+                  />
+                ))}
+              </div>
+            ) : (
+              <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2H3v2a9 9 0 0 0 8 8.94V23h2v-2.06A9 9 0 0 0 21 12v-2h-2z" />
+              </svg>
+            )}
+          </button>
+        )}
+
+        {/* Send */}
         <button
           type="submit"
           disabled={!input.trim() || busy}
