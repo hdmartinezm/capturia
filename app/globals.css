@@ -73,6 +73,39 @@ body {
   0%, 100% { box-shadow: 0 0 8px #38bdf8; }
   50%      { box-shadow: 0 0 18px #38bdf8, 0 0 4px #38bdf8 inset; }
 }
+@keyframes overlay-out {
+  to { opacity: 0; transform: translateY(6px) scale(0.97); }
+}
+@keyframes letterbox-out-top {
+  to { transform: translateY(-100%); }
+}
+@keyframes letterbox-out-bottom {
+  to { transform: translateY(100%); }
+}
+@keyframes border-breathe {
+  0%, 100% { border-color: rgba(255, 255, 255, 0.18); }
+  50%      { border-color: rgba(255, 255, 255, 0.34); }
+}
+@keyframes mic-glow {
+  0%, 100% { box-shadow: inset 0 0 0 1px rgba(34, 197, 94, 0.18), inset 0 0 24px rgba(34, 197, 94, 0.06); }
+  50%      { box-shadow: inset 0 0 0 1px rgba(34, 197, 94, 0.45), inset 0 0 48px rgba(34, 197, 94, 0.18); }
+}
+@keyframes ticker-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+@keyframes shimmer-sweep {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+@keyframes stripe-march {
+  from { background-position: 0 0; }
+  to   { background-position: 24px 0; }
+}
+@keyframes live-dot-pulse {
+  0%, 100% { opacity: 1;   transform: scale(1); }
+  50%      { opacity: 0.6; transform: scale(1.25); }
+}
 
 .overlay-enter           { animation: overlay-in        350ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
 .overlay-enter-left      { animation: overlay-in-left   400ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
@@ -84,3 +117,25 @@ body {
 .delta-flash-down        { animation: delta-flash-down 700ms ease-out both; }
 .step-pop                { animation: step-pop 380ms cubic-bezier(0.34, 1.56, 0.64, 1) both; }
 .progress-pulse          { animation: progress-pulse 1.6s ease-in-out infinite; }
+.overlay-exit            { animation: overlay-out 280ms cubic-bezier(0.4, 0, 1, 1) forwards; }
+.letterbox-exit-top      { animation: letterbox-out-top    400ms cubic-bezier(0.4, 0, 1, 1) forwards; }
+.letterbox-exit-bottom   { animation: letterbox-out-bottom 400ms cubic-bezier(0.4, 0, 1, 1) forwards; }
+.border-breathe          { animation: border-breathe 4.5s ease-in-out infinite; }
+.mic-glow                { animation: mic-glow 1.8s ease-in-out infinite; }
+.live-dot-pulse          { animation: live-dot-pulse 1.4s ease-in-out infinite; }
+.ticker-scroll           { animation: ticker-scroll 22s linear infinite; }
+.stripe-march            { animation: stripe-march 0.9s linear infinite; }
+
+/* Shimmer sweep across keyword chips. Use `--shimmer-color` to set glint color. */
+.kw-shimmer {
+  background: linear-gradient(
+    100deg,
+    transparent 35%,
+    var(--shimmer-color, rgba(255,255,255,0.4)) 50%,
+    transparent 65%
+  );
+  background-size: 200% 100%;
+  animation: shimmer-sweep 2.6s linear infinite;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}

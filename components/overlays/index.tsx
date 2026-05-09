@@ -8,12 +8,51 @@ import KeywordHighlight from "./KeywordHighlight";
 import FloatingChart from "./FloatingChart";
 import ChatBubble from "./ChatBubble";
 import Letterbox from "./Letterbox";
+import Ticker from "./Ticker";
+import LiveBadge from "./LiveBadge";
+import StatRing from "./StatRing";
+import BigCounter from "./BigCounter";
+
+const STAGGER_MS = 60;
+
+const ENTER_CLASS: Record<OverlaySpec["type"], string> = {
+  MetricsPanel: "overlay-enter",
+  Timeline: "overlay-enter",
+  LowerThird: "overlay-enter-left",
+  ProgressBar: "overlay-enter",
+  KeywordHighlight: "overlay-enter",
+  FloatingChart: "overlay-enter",
+  ChatBubble: "overlay-enter-bottom",
+  Letterbox: "",
+  Ticker: "overlay-enter-bottom",
+  LiveBadge: "overlay-enter-scale",
+  StatRing: "overlay-enter-scale",
+  BigCounter: "overlay-enter",
+};
 
 interface Props {
   overlay: OverlaySpec;
+  exiting?: boolean;
+  enterIndex?: number;
 }
 
-export function OverlayComponent({ overlay }: Props) {
+export function OverlayComponent({ overlay, exiting = false, enterIndex = 0 }: Props) {
+  if (overlay.type === "Letterbox") {
+    return <Letterbox {...overlay.props} exiting={exiting} />;
+  }
+  const className = exiting ? "overlay-exit" : ENTER_CLASS[overlay.type];
+  const style =
+    !exiting && enterIndex > 0
+      ? { animationDelay: `${enterIndex * STAGGER_MS}ms` }
+      : undefined;
+  return (
+    <div className={className} style={style}>
+      <Inner overlay={overlay} />
+    </div>
+  );
+}
+
+function Inner({ overlay }: { overlay: Exclude<OverlaySpec, { type: "Letterbox" }> }) {
   switch (overlay.type) {
     case "MetricsPanel":
       return <MetricsPanel {...overlay.props} />;
@@ -29,9 +68,13 @@ export function OverlayComponent({ overlay }: Props) {
       return <FloatingChart {...overlay.props} />;
     case "ChatBubble":
       return <ChatBubble {...overlay.props} />;
-    case "Letterbox":
-      return <Letterbox {...overlay.props} />;
-    default:
-      return null;
+    case "Ticker":
+      return <Ticker {...overlay.props} />;
+    case "LiveBadge":
+      return <LiveBadge {...overlay.props} />;
+    case "StatRing":
+      return <StatRing {...overlay.props} />;
+    case "BigCounter":
+      return <BigCounter {...overlay.props} />;
   }
 }

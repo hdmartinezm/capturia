@@ -1,4 +1,5 @@
 "use client";
+import { useTypewriter } from "@/hooks/useTypewriter";
 
 interface Props {
   name: string;
@@ -6,14 +7,18 @@ interface Props {
 }
 
 export default function LowerThird({ name, subtitle }: Props) {
+  const typedName = useTypewriter(name, 32);
   return (
-    <div className="overlay-enter-left">
-      <div className="flex items-stretch">
-        <div className="w-1 bg-blue-500 rounded-full mr-3 shadow-[0_0_8px_#3b82f6]" />
-        <div className="bg-black/80 backdrop-blur-md border border-white/20 px-5 py-3 rounded-r-xl">
-          <p className="text-white font-bold text-lg leading-tight tracking-tight">{name}</p>
-          <p className="text-blue-300 text-sm mt-0.5 font-mono">{subtitle}</p>
-        </div>
+    <div className="flex items-stretch">
+      <div className="w-1 bg-blue-500 rounded-full mr-3 shadow-[0_0_8px_#3b82f6]" />
+      <div className="bg-black/80 backdrop-blur-md border border-white/20 px-5 py-3 rounded-r-xl border-breathe">
+        <p className="text-white font-bold text-lg leading-tight tracking-tight min-h-[1.5rem]">
+          {typedName}
+          {typedName.length < name.length && (
+            <span className="inline-block w-[2px] h-4 bg-white/80 ml-0.5 align-middle animate-pulse" />
+          )}
+        </p>
+        <p className="text-blue-300 text-sm mt-0.5 font-mono">{subtitle}</p>
       </div>
     </div>
   );

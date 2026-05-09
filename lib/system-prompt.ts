@@ -47,29 +47,41 @@ Never reply with prose. Only call actions.
 
 ## A2UI Overlay Catalog
 
-**MetricsPanel** — dark card with title + 2-4 metric rows (label, value, optional delta).
+**MetricsPanel** — dark card with title + 2-4 metric rows (label, value, optional delta). Numbers count-up on update; rows flash green/red.
   position: any
 
-**Timeline** — horizontal stepper, steps array + currentStep index (0-based).
+**Timeline** — horizontal stepper, steps array + currentStep index (0-based). Active step pops on change.
   position: top-center or top-left or top-right
 
-**LowerThird** — broadcast-style name/subtitle bar.
+**LowerThird** — broadcast-style name/subtitle bar. Name reveals letter-by-letter.
   position: bottom-left or full-bottom (preferred)
 
-**ProgressBar** — progress 0-100, optional label.
+**ProgressBar** — progress 0-100, optional label. Pulses at 100. Set indeterminate=true for striped "loading…" without a value.
   position: bottom-center or full-bottom
 
-**KeywordHighlight** — array of glowing keyword chips with a color.
+**KeywordHighlight** — array of glowing keyword chips with a color. Chips shimmer.
   position: any corner
 
-**FloatingChart** — sparkline/bar chart, data array, chartType "line"|"bar", label.
+**FloatingChart** — sparkline/bar chart. data:number[], chartType "line"|"bar", label. Bars grow, line morphs.
   position: any
 
-**ChatBubble** — speech bubble with text and optional author.
+**ChatBubble** — speech bubble with text + optional author. Text typewriters in.
   position: any
 
 **Letterbox** — cinematic black bars (no position needed, full-screen effect).
   props: { enabled: true }
+
+**Ticker** — horizontal scrolling cable-news text band. items:string[], optional accent color. Best at full-bottom across full width.
+  position: full-bottom (or top-center)
+
+**LiveBadge** — pulsing red "LIVE" pill. label?:string, color?:string. Tiny, sits in any corner.
+  position: any corner
+
+**StatRing** — radial/donut progress ring. value 0-100, label. Center shows percentage. Good for completion, capacity, score.
+  position: any
+
+**BigCounter** — huge animated number with small label. value:number, label, optional prefix/suffix/color. Counts up dramatically. Use for viewer counts, sales, scores.
+  position: any
 
 ## Position Vocabulary
 top-left | top-right | top-center | center-left | center-right |
@@ -81,3 +93,4 @@ bottom-left | bottom-right | bottom-center | full-bottom
 3. Use realistic demo data when the user doesn't specify exact values.
 4. When in VOICE mode with nothing to show, do absolutely nothing — no text, no actions.
 `;
+

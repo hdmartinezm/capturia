@@ -11,6 +11,16 @@ import WebcamFeed from "@/components/WebcamFeed";
 import OverlayLayer from "@/components/OverlayLayer";
 import CommandBar from "@/components/CommandBar";
 import LiveCaptions from "@/components/LiveCaptions";
+import HudClock from "@/components/HudClock";
+// Real A2UI catalog object: createCatalog() is invoked at module load,
+// registering all 12 component renderers against the typed Zod definitions.
+// Currently exposed for future <A2UIRenderer/> use; runtime stays AG-UI.
+import { liveStageCatalog } from "@/lib/a2ui-catalog";
+
+if (typeof window !== "undefined") {
+  // Surface the catalog for inspection / future A2UI surface hosting.
+  (window as unknown as { liveStageCatalog?: unknown }).liveStageCatalog = liveStageCatalog;
+}
 import { useVoiceCapture } from "@/hooks/useVoiceCapture";
 import { useRecorder } from "@/hooks/useRecorder";
 import type { OverlaySpec, OverlayPosition } from "@/lib/types";
@@ -66,7 +76,7 @@ function LiveStage() {
         name: "type",
         type: "string",
         description:
-          "Component type: MetricsPanel | Timeline | LowerThird | ProgressBar | KeywordHighlight | FloatingChart | ChatBubble | Letterbox",
+          "Component type: MetricsPanel | Timeline | LowerThird | ProgressBar | KeywordHighlight | FloatingChart | ChatBubble | Letterbox | Ticker | LiveBadge | StatRing | BigCounter",
         required: true,
       },
       {
@@ -266,7 +276,11 @@ function LiveStage() {
   });
 
   return (
-    <div className="relative w-screen h-screen bg-black overflow-hidden">
+    <div
+      className={`relative w-screen h-screen bg-black overflow-hidden ${
+        isListening ? "mic-glow" : ""
+      }`}
+    >
       {/* Layer 0: webcam */}
       <WebcamFeed />
 
@@ -285,28 +299,35 @@ function LiveStage() {
         isVoiceSupported={isSupported}
       />
 
-      {/* Top-right controls: branding + record */}
+      {/* Top-right HUD: LIVE pill + clock + record */}
       <div className="absolute top-3 right-4 z-30 flex items-center gap-3">
         {/* Record toggle */}
         <button
           onClick={() => (isRecording ? stopRecording() : startRecording())}
           className={`flex items-center gap-1.5 text-xs font-mono uppercase tracking-widest px-3 py-1.5 rounded-full transition-all ${
             isRecording
-              ? "bg-red-600 text-white animate-pulse"
+              ? "bg-red-600 text-white"
               : "bg-white/10 text-white/50 hover:bg-white/20 hover:text-white/80 border border-white/10"
           }`}
         >
           <span
-            className={`w-2 h-2 rounded-full ${isRecording ? "bg-white" : "bg-red-500"}`}
+            className={`w-2 h-2 rounded-full ${
+              isRecording ? "bg-white live-dot-pulse" : "bg-red-500"
+            }`}
           />
           {isRecording ? "Stop" : "Rec"}
         </button>
 
-        {/* LiveStage branding */}
-        <div className="flex items-center gap-2 pointer-events-none">
-          <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse shadow-[0_0_8px_#ef4444]" />
-          <span className="text-white/60 text-xs font-mono tracking-widest uppercase">
-            LiveStage
+        {/* Live clock */}
+        <div className="px-2.5 py-1 rounded-md bg-black/40 border border-white/10 backdrop-blur-md pointer-events-none">
+          <HudClock />
+        </div>
+
+        {/* LIVE pill */}
+        <div className="flex items-center gap-1.5 bg-red-600/95 px-2.5 py-1 rounded-md shadow-[0_0_12px_rgba(239,68,68,0.4)] pointer-events-none">
+          <span className="w-1.5 h-1.5 rounded-full bg-white live-dot-pulse" />
+          <span className="text-white text-[10px] font-bold tracking-[0.2em] uppercase">
+            Live
           </span>
         </div>
       </div>

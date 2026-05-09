@@ -47,10 +47,12 @@ export const catalogDefinitions = {
     }),
   },
   ProgressBar: {
-    description: "Full-width progress bar with optional label. Good for loading, completion status.",
+    description:
+      "Full-width progress bar with optional label. Good for loading, completion status. Set `indeterminate: true` for an animated stripe (e.g. 'thinking', 'loading…') without a known percentage.",
     props: z.object({
       progress: z.number().min(0).max(100).describe("0-100"),
       label: z.string().optional(),
+      indeterminate: z.boolean().optional(),
     }),
   },
   KeywordHighlight: {
@@ -81,6 +83,43 @@ export const catalogDefinitions = {
       "Full-screen black bars top and bottom for cinematic 2.35:1 feel. No position needed.",
     props: z.object({
       enabled: z.boolean(),
+    }),
+  },
+  Ticker: {
+    description:
+      "Horizontal scrolling text band, classic cable-news lower-third look. Best at full-bottom or top-center across the full width. Items loop seamlessly.",
+    props: z.object({
+      items: z.array(z.string()).describe("Short headlines or messages"),
+      accent: z.string().optional().describe("CSS color for bullet dots, e.g. '#ef4444'"),
+    }),
+  },
+  LiveBadge: {
+    description:
+      "Pulsing colored 'LIVE' pill. Use to mark a stream as live or call attention to anything happening right now. Tiny, sits in a corner.",
+    props: z.object({
+      label: z.string().optional().describe("Defaults to 'LIVE'. Keep ≤6 chars."),
+      color: z.string().optional().describe("CSS color, defaults to red"),
+    }),
+  },
+  StatRing: {
+    description:
+      "Radial donut progress ring with center percentage and a side label. Great for completion, capacity, score-out-of-100.",
+    props: z.object({
+      value: z.number().min(0).max(100).describe("0-100"),
+      label: z.string(),
+      color: z.string().optional().describe("CSS color, defaults to cyan"),
+      size: z.number().optional().describe("Pixel size, defaults to 84"),
+    }),
+  },
+  BigCounter: {
+    description:
+      "Huge animated number with a small label above. Counts up smoothly. Great for live viewers, sales, score, anything dramatic.",
+    props: z.object({
+      value: z.number(),
+      label: z.string().describe("Tiny label above, e.g. 'VIEWERS'"),
+      prefix: z.string().optional().describe("e.g. '$'"),
+      suffix: z.string().optional().describe("e.g. ' watching'"),
+      color: z.string().optional(),
     }),
   },
 } as const;

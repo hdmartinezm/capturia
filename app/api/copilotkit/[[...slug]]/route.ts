@@ -10,7 +10,7 @@ import { SYSTEM_PROMPT } from "@/lib/system-prompt";
 const runtime = new CopilotRuntime({
   agents: {
     default: new BuiltInAgent({
-      model: anthropic("claude-sonnet-4-6"),
+      model: anthropic("claude-haiku-4-5"),
       apiKey: process.env.ANTHROPIC_API_KEY,
       prompt: SYSTEM_PROMPT,
     }),

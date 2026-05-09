@@ -10,7 +10,7 @@ interface Props {
 
 export default function MetricsPanel({ title, metrics }: Props) {
   return (
-    <div className="overlay-enter bg-black/70 backdrop-blur-md border border-white/20 rounded-xl p-4 min-w-[200px]">
+    <div className="bg-black/70 backdrop-blur-md border border-white/20 rounded-xl p-4 min-w-[200px] border-breathe">
       <p className="text-white/60 text-xs uppercase tracking-widest mb-3 font-mono">{title}</p>
       <div className="space-y-2">
         {metrics.map((m, i) => (

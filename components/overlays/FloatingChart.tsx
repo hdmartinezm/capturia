@@ -22,7 +22,7 @@ export default function FloatingChart({ data, chartType, label }: Props) {
     .join(" ");
 
   return (
-    <div className="overlay-enter bg-black/70 backdrop-blur-md border border-white/20 rounded-xl p-3 min-w-[180px]">
+    <div className="bg-black/70 backdrop-blur-md border border-white/20 rounded-xl p-3 min-w-[180px] border-breathe">
       <p className="text-white/50 text-xs font-mono mb-2 uppercase tracking-wider">{label}</p>
       {chartType === "bar" ? (
         <div className="flex items-end gap-1 h-12">

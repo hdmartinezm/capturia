@@ -13,7 +13,7 @@ interface Props {
 export default function Timeline({ steps, currentStep }: Props) {
   const popKey = usePopKey(currentStep);
   return (
-    <div className="overlay-enter bg-black/70 backdrop-blur-md border border-white/20 rounded-xl px-5 py-3">
+    <div className="bg-black/70 backdrop-blur-md border border-white/20 rounded-xl px-5 py-3 border-breathe">
       <div className="flex items-center gap-0">
         {steps.map((step, i) => {
           const active = i === currentStep;

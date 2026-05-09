@@ -42,7 +42,7 @@ export type OverlaySpec =
       id: string;
       type: "ProgressBar";
       position: OverlayPosition;
-      props: { progress: number; label?: string };
+      props: { progress: number; label?: string; indeterminate?: boolean };
     }
   | {
       id: string;
@@ -67,4 +67,28 @@ export type OverlaySpec =
       type: "Letterbox";
       position?: never;
       props: { enabled: boolean };
+    }
+  | {
+      id: string;
+      type: "Ticker";
+      position: OverlayPosition;
+      props: { items: string[]; accent?: string };
+    }
+  | {
+      id: string;
+      type: "LiveBadge";
+      position: OverlayPosition;
+      props: { label?: string; color?: string };
+    }
+  | {
+      id: string;
+      type: "StatRing";
+      position: OverlayPosition;
+      props: { value: number; label: string; color?: string; size?: number };
+    }
+  | {
+      id: string;
+      type: "BigCounter";
+      position: OverlayPosition;
+      props: { value: number; label: string; prefix?: string; suffix?: string; color?: string };
     };

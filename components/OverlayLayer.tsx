@@ -1,5 +1,5 @@
 "use client";
-import { useLayoutEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { POSITION_CLASSES } from "@/lib/positions";
 import { OverlayComponent } from "@/components/overlays";
 import type { OverlaySpec } from "@/lib/types";
@@ -8,17 +8,88 @@ interface Props {
   overlays: OverlaySpec[];
 }
 
+const EXIT_MS = 320;
+const STAGGER_MS = 60;
+
+type Tracked = { overlay: OverlaySpec; exiting: boolean; enterIndex: number };
+
 export default function OverlayLayer({ overlays }: Props) {
+  const [tracked, setTracked] = useState<Tracked[]>(() =>
+    overlays.map((o, i) => ({ overlay: o, exiting: false, enterIndex: i }))
+  );
+  const timeoutsRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+
+  useEffect(() => {
+    setTracked((prev) => {
+      const incomingIds = new Set(overlays.map((o) => o.id));
+      const prevIds = new Set(prev.map((p) => p.overlay.id));
+
+      // Walk previous in order, deciding fate of each
+      const next: Tracked[] = [];
+      for (const p of prev) {
+        const stillThere = incomingIds.has(p.overlay.id);
+        if (stillThere) {
+          // Cancel any pending exit (the overlay came back)
+          const t = timeoutsRef.current.get(p.overlay.id);
+          if (t) {
+            clearTimeout(t);
+            timeoutsRef.current.delete(p.overlay.id);
+          }
+          const fresh = overlays.find((o) => o.id === p.overlay.id)!;
+          next.push({ overlay: fresh, exiting: false, enterIndex: p.enterIndex });
+        } else if (!p.exiting) {
+          // Newly removed — schedule unmount after exit animation
+          next.push({ ...p, exiting: true });
+          if (!timeoutsRef.current.has(p.overlay.id)) {
+            const timeout = setTimeout(() => {
+              setTracked((curr) => curr.filter((c) => c.overlay.id !== p.overlay.id));
+              timeoutsRef.current.delete(p.overlay.id);
+            }, EXIT_MS);
+            timeoutsRef.current.set(p.overlay.id, timeout);
+          }
+        } else {
+          // Already exiting, keep until its scheduled removal fires
+          next.push(p);
+        }
+      }
+
+      // Append brand-new items, with batch-local enter index for stagger
+      let staggerIndex = 0;
+      for (const o of overlays) {
+        if (!prevIds.has(o.id)) {
+          next.push({ overlay: o, exiting: false, enterIndex: staggerIndex++ });
+        }
+      }
+      return next;
+    });
+  }, [overlays]);
+
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    const timeouts = timeoutsRef.current;
+    return () => {
+      for (const t of timeouts.values()) clearTimeout(t);
+      timeouts.clear();
+    };
+  }, []);
+
   return (
     <div className="absolute inset-0 pointer-events-none">
-      {overlays.map((overlay) => {
+      {tracked.map(({ overlay, exiting, enterIndex }) => {
         if (overlay.type === "Letterbox") {
-          return <OverlayComponent key={overlay.id} overlay={overlay} />;
+          return (
+            <OverlayComponent
+              key={overlay.id}
+              overlay={overlay}
+              exiting={exiting}
+              enterIndex={enterIndex}
+            />
+          );
         }
         const posClass = POSITION_CLASSES[overlay.position] ?? "top-4 left-4";
         return (
-          <PositionedOverlay key={overlay.id} posClass={posClass}>
-            <OverlayComponent overlay={overlay} />
+          <PositionedOverlay key={overlay.id} posClass={posClass} exiting={exiting}>
+            <OverlayComponent overlay={overlay} exiting={exiting} enterIndex={enterIndex} />
           </PositionedOverlay>
         );
       })}
@@ -32,12 +103,21 @@ export default function OverlayLayer({ overlays }: Props) {
  * position via a transient `transform: translate(...)`. The outer's own
  * transform (e.g. `-translate-x-1/2`) is preserved on the outer wrapper.
  */
-function PositionedOverlay({ posClass, children }: { posClass: string; children: React.ReactNode }) {
+function PositionedOverlay({
+  posClass,
+  exiting,
+  children,
+}: {
+  posClass: string;
+  exiting: boolean;
+  children: React.ReactNode;
+}) {
   const innerRef = useRef<HTMLDivElement>(null);
   const prevRectRef = useRef<DOMRect | null>(null);
   const prevPosRef = useRef<string>(posClass);
 
   useLayoutEffect(() => {
+    if (exiting) return;
     const el = innerRef.current;
     if (!el) return;
     const newRect = el.getBoundingClientRect();
@@ -55,7 +135,7 @@ function PositionedOverlay({ posClass, children }: { posClass: string; children:
     }
     prevPosRef.current = posClass;
     prevRectRef.current = newRect;
-  }, [posClass]);
+  }, [posClass, exiting]);
 
   return (
     <div className={`absolute ${posClass}`}>
@@ -63,3 +143,5 @@ function PositionedOverlay({ posClass, children }: { posClass: string; children:
     </div>
   );
 }
+
+export { STAGGER_MS };
