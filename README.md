@@ -202,4 +202,3 @@ PRs welcome. Easiest first contributions:
 
 The **Generative UI Global Hackathon**, May 2026. Solo build by Andres Carreon, founder of Pixalia.
 
-Reach me at `andresomar95@gmail.com`.
