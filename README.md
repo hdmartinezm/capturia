@@ -54,7 +54,7 @@ To capture the demo as a video file, click **Rec** in the top-right HUD. It reco
 | UI | React 19.2.4, Tailwind CSS v4, raw CSS keyframes |
 | Agent runtime | CopilotKit 1.57.1 — `@copilotkit/runtime/v2` in single-route mode |
 | Catalog | `@copilotkit/a2ui-renderer` — real `createCatalog` against Zod schemas |
-| Model | Gemini 2.5 Flash-Lite via `@ai-sdk/google` (`maxSteps: 1`, `temperature: 0`) |
+| Model | Gemini 3.1 Flash-Lite via `@ai-sdk/google` (`maxSteps: 1`, `temperature: 0`) |
 | Voice | Web Speech API (browser-native) |
 | Recording | MediaRecorder + getDisplayMedia (VP9+Opus webm) |
 | Schemas | Zod |
@@ -68,7 +68,7 @@ The agent doesn't manipulate the DOM. It sees a typed catalog of components and 
 
 **Frontend** (`app/page.tsx`) registers six tools the agent can call via `useCopilotAction`. `useCopilotReadable` shares the current overlay list back into the agent's context as **AG-UI shared state** — so the agent always knows what's on screen and can target updates by `id`. `useCopilotChat().appendMessage` pipes voice transcripts into the same session as `[VOICE]`-prefixed messages.
 
-**Backend** (`app/api/copilotkit/[[...slug]]/route.ts`) wraps `BuiltInAgent` from `@copilotkit/runtime/v2`. Single-route mode, in-memory thread state, `maxSteps: 1` so each utterance is one model call (no internal roundtrip), `temperature: 0` for deterministic tool selection. ~150 ms TTFT on Gemini 2.5 Flash-Lite.
+**Backend** (`app/api/copilotkit/[[...slug]]/route.ts`) wraps `BuiltInAgent` from `@copilotkit/runtime/v2`. Single-route mode, in-memory thread state, `maxSteps: 1` so each utterance is one model call (no internal roundtrip), `temperature: 0` for deterministic tool selection. ~150 ms TTFT on Gemini 3.1 Flash-Lite.
 
 **A2UI catalog** (`lib/a2ui-catalog.tsx`) uses real `createCatalog` from `@copilotkit/a2ui-renderer` to register each Zod-defined component with its React adapter renderer. The Zod schemas in `lib/catalog.ts` are the single source of truth — they define the prop shape the agent must produce *and* are imported by the renderers themselves. The catalog object is exposed at `window.capturiaCatalog` for live inspection and is the foundation for the upcoming `<A2UIRenderer>` surface mode.
 
@@ -76,7 +76,7 @@ The agent doesn't manipulate the DOM. It sees a typed catalog of components and 
 
 1. Web Speech `onresult` fires (interim → final transcript)
 2. Transcript appended to the AG-UI session as a `[VOICE]` user message
-3. Gemini 2.5 Flash-Lite emits an `add_overlay` tool call (~150 ms TTFT)
+3. Gemini  Flash-Lite emits an `add_overlay` tool call (~150 ms TTFT)
 4. CopilotKit dispatches the call to `useCopilotAction("add_overlay")`
 5. `setOverlays(prev => [...prev, { id, type, position, props }])` mutates React state
 6. `OverlayLayer` reconciles with a 60ms-staggered entrance per new item
@@ -138,7 +138,7 @@ A few decisions worth calling out for anyone reading the code:
 
 **A2UI catalog is registered, not yet runtime-rendered.** `lib/a2ui-catalog.tsx` invokes `createCatalog` and exposes the result on `window.capturiaCatalog`. The catalog is the typed contract between the system prompt and the renderers, but the runtime hot path still flows through CopilotKit AG-UI tool calls (faster and simpler for per-component updates). Surface-mode rendering (`<A2UIRenderer surfaceId=…/>`) is the next milestone — it would let the agent push whole UIs at once.
 
-**Why Gemini 2.5 Flash-Lite, not 3.x.** Gemini 3.x stamps tool calls with a `thought_signature` that must be echoed back on subsequent turns. CopilotKit's AG-UI roundtrip doesn't propagate it yet — so tool-using flows on 3.x error after the second tool call. Disabling thinking (`thinkingBudget: 0`) is allowlist-gated on 3.x, so we can't flip our way out. 2.5 Flash-Lite has thinking off by default and works cleanly. The proper fix is a custom-agent factory that captures and replays signatures — ~1-2 hours of work, planned for after the demo.
+**Why Gemini  Flash-Lite, not 3.x.** Gemini 3.x stamps tool calls with a `thought_signature` that must be echoed back on subsequent turns. CopilotKit's AG-UI roundtrip doesn't propagate it yet — so tool-using flows on 3.x error after the second tool call. Disabling thinking (`thinkingBudget: 0`) is allowlist-gated on 3.x, so we can't flip our way out. 3.1 Flash-Lite has thinking off by default and works cleanly. The proper fix is a custom-agent factory that captures and replays signatures — ~1-2 hours of work, planned for after the demo.
 
 ---
 
