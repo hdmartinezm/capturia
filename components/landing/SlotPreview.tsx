@@ -92,7 +92,7 @@ function PreviewBody({ code }: { code: SlotCode }) {
     case "LTH":
       return (
         <Scaled scale={0.62}>
-          <LowerThird name="Andres" subtitle="Founder · Bubblio" />
+          <LowerThird name="Alex" subtitle="Founder · Acme" />
         </Scaled>
       );
 

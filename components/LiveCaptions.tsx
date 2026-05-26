@@ -16,7 +16,7 @@ export default function LiveCaptions({ text, lastSent, speechStatus, lastError, 
 
   return (
     <div className="absolute bottom-20 left-0 right-0 z-20 flex flex-col items-center gap-2 px-6 pointer-events-none select-none">
-      {/* Status line — always visible when listening */}
+      {/* Status line: always visible when listening */}
       <div className="flex items-center gap-2">
         {!isError && (
           <span className="relative flex h-2 w-2">
@@ -33,7 +33,7 @@ export default function LiveCaptions({ text, lastSent, speechStatus, lastError, 
         </span>
       </div>
 
-      {/* Interim transcript — what you're saying right now */}
+      {/* Interim transcript: what you're saying right now */}
       {text && (
         <div className="bg-black/80 backdrop-blur-lg border border-white/10 rounded-2xl px-6 py-3 max-w-2xl w-full text-center">
           <p className="text-white text-xl font-medium leading-snug">
@@ -43,7 +43,7 @@ export default function LiveCaptions({ text, lastSent, speechStatus, lastError, 
         </div>
       )}
 
-      {/* Persistent error — survives rapid restarts */}
+      {/* Persistent error: survives rapid restarts */}
       {lastError && (
         <div className="bg-red-950/80 border border-red-500/40 rounded-xl px-4 py-1.5 max-w-xl w-full text-center">
           <p className="text-red-400 text-xs font-mono">error: {lastError}</p>

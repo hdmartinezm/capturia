@@ -17,7 +17,7 @@ const runtime = new CopilotRuntime({
       prompt: SYSTEM_PROMPT,
       // Voice → single response from Gemini that emits all tool calls at
       // once (frontend handlers don't return data the model needs to "see").
-      // No internal roundtrip needed — keeps each utterance to one model call.
+      // No internal roundtrip needed. Keeps each utterance to one model call.
       maxSteps: 1,
       // Lower temp = faster decoding + more deterministic tool selection.
       temperature: 0,

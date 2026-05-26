@@ -29,14 +29,14 @@ export function CapturiaMark({ animated = true, ...rest }: MarkProps) {
       aria-label="Capturia"
       {...rest}
     >
-      {/* Viewfinder bracket "[" — vertical bar with two short stubs */}
+      {/* Viewfinder bracket "[": vertical bar with two short stubs */}
       <g fill="currentColor">
         <rect x="5"   y="9"    width="2.5" height="22" />
         <rect x="5"   y="9"    width="11"  height="2.5" />
         <rect x="5"   y="28.5" width="11"  height="2.5" />
       </g>
 
-      {/* Tally halo — pulses softly when animated */}
+      {/* Tally halo: pulses softly when animated */}
       <circle
         cx="27"
         cy="20"

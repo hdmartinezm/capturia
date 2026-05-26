@@ -53,6 +53,14 @@ function TallyBar() {
         </div>
 
         <nav className="flex items-center gap-1 sm:gap-2 font-mono text-[10px] tracking-[0.22em] uppercase">
+          <a
+            href="https://github.com/AndresCarreonDiaz/capturia"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-2.5 py-1 text-[var(--studio-fade)] hover:text-white transition-colors"
+          >
+            Source →
+          </a>
           <Link
             href="/studio"
             className="px-2.5 py-1 text-[var(--phosphor)] hover:text-white transition-colors"
@@ -589,9 +597,28 @@ function SiteFooter() {
           <div className="mt-3 font-mono text-[11px] text-[var(--studio-graphite)] leading-relaxed">
             Built solo by Andres Carreon · founder, Bubblio · 1st place at the Generative UI Global Hackathon · May 2026
           </div>
+          <div className="mt-1 font-mono text-[10px] tracking-[0.18em] uppercase text-[var(--studio-fade)]">
+            Open source ·{" "}
+            <a
+              href="https://github.com/AndresCarreonDiaz/capturia/blob/main/LICENSE"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-white transition-colors"
+            >
+              MIT
+            </a>
+          </div>
         </div>
 
         <nav className="flex items-center gap-1 font-mono text-[10px] tracking-[0.22em] uppercase">
+          <a
+            href="https://github.com/AndresCarreonDiaz/capturia"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-2.5 py-1 text-[var(--studio-fade)] hover:text-white transition-colors"
+          >
+            GitHub →
+          </a>
           <Link
             href="/studio"
             className="px-2.5 py-1 text-[var(--phosphor)] hover:text-white transition-colors"

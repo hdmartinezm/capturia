@@ -2,6 +2,7 @@
 import { useState, useRef } from "react";
 import { useCopilotChat } from "@copilotkit/react-core";
 import { TextMessage, MessageRole } from "@copilotkit/runtime-client-gql";
+import { useIsDesktop } from "@/hooks/useDesktopHotkey";
 
 interface Props {
   overlays: { id: string; type: string }[];
@@ -12,7 +13,7 @@ interface Props {
 }
 
 const QUICK_ACTIONS: { emoji: string; label: string; prompt: string }[] = [
-  { emoji: "👤", label: "Lower third",   prompt: "Add a lower third with my name as Andres, subtitle Founder of Pixalia" },
+  { emoji: "👤", label: "Lower third",   prompt: "Add a lower third with my name as Alex, subtitle Founder of Acme" },
   { emoji: "📊", label: "Metrics",       prompt: "Add Q4 metrics: revenue $1.2M (+24%), users 18K (+12%), churn 2.1% (-0.4%)" },
   { emoji: "🎯", label: "Progress 73%",  prompt: "Add a progress bar at 73% with label Demo Loading" },
   { emoji: "✨", label: "Keywords",      prompt: "Highlight keywords AI, growth, demo with auto color" },
@@ -29,6 +30,7 @@ export default function CommandBar({
   const [isLoading, setIsLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const { appendMessage, isLoading: chatLoading } = useCopilotChat();
+  const isDesktop = useIsDesktop();
 
   const busy = isLoading || chatLoading;
 
@@ -148,7 +150,7 @@ export default function CommandBar({
             }`}
           >
             {isListening ? (
-              // CSS-animated bars while listening (no AudioContext — avoids Speech API conflict)
+              // CSS-animated bars while listening (no AudioContext, avoids Speech API conflict)
               <div className="flex items-end justify-center gap-px w-full h-full py-1.5">
                 {[14, 8, 18, 10].map((max, i) => (
                   <div
@@ -184,6 +186,16 @@ export default function CommandBar({
           )}
         </button>
       </form>
+      {!isVoiceSupported && !isDesktop && (
+        <p className="mt-2 text-center text-[10px] font-mono uppercase tracking-[0.2em] text-white/30">
+          Voice mode needs Chrome or Edge. Brave Shields and Firefox block it.
+        </p>
+      )}
+      {isDesktop && isVoiceSupported && (
+        <p className="mt-2 text-center text-[10px] font-mono uppercase tracking-[0.2em] text-white/30">
+          Press <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white/70 font-mono text-[10px] mx-0.5">⌘⌥Space</kbd> to talk. Pause to end. Local Whisper, on-device.
+        </p>
+      )}
     </div>
   );
 }

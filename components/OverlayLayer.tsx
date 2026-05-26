@@ -38,7 +38,7 @@ export default function OverlayLayer({ overlays }: Props) {
           const fresh = overlays.find((o) => o.id === p.overlay.id)!;
           next.push({ overlay: fresh, exiting: false, enterIndex: p.enterIndex });
         } else if (!p.exiting) {
-          // Newly removed — schedule unmount after exit animation
+          // Newly removed: schedule unmount after exit animation
           next.push({ ...p, exiting: true });
           if (!timeoutsRef.current.has(p.overlay.id)) {
             const timeout = setTimeout(() => {

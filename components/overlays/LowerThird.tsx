@@ -25,7 +25,7 @@ export default function LowerThird({ name, subtitle }: Props) {
             <span className="inline-block w-[2px] h-4 bg-white/80 ml-0.5 align-middle animate-pulse" />
           )}
         </p>
-        {/* Underline sweep — keyed to name so it restarts when the name changes */}
+        {/* Underline sweep: keyed to name so it restarts when the name changes */}
         {!isTyping && (
           <div
             key={name}

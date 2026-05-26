@@ -11,7 +11,7 @@ interface Props {
 const HISTORY_CAP = 6;
 
 export default function MetricsPanel({ title, metrics }: Props) {
-  // Agent props are untrusted at runtime — guard against missing/non-array metrics
+  // Agent props are untrusted at runtime. Guard against missing/non-array metrics
   // before any iteration. Filter to objects with at least a label.
   const safeMetrics: MetricRow[] = Array.isArray(metrics)
     ? metrics

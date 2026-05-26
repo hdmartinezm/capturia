@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CopilotKit } from "@copilotkit/react-core";
 import {
   useCopilotReadable,
@@ -22,12 +22,15 @@ if (typeof window !== "undefined") {
   // Surface the catalog for inspection / future A2UI surface hosting.
   (window as unknown as { capturiaCatalog?: unknown }).capturiaCatalog = capturiaCatalog;
 }
-import { useVoiceCapture } from "@/hooks/useVoiceCapture";
+import { useStudioVoice } from "@/hooks/useStudioVoice";
 import { useRecorder } from "@/hooks/useRecorder";
+import { useDesktopHotkey } from "@/hooks/useDesktopHotkey";
+import { useKeyVault } from "@/hooks/useKeyVault";
+import SettingsModal from "@/components/SettingsModal";
 import type { OverlaySpec, OverlayPosition } from "@/lib/types";
 
 export default function Studio() {
-  // Studio is fullscreen — lock body scroll while mounted so the landing
+  // Studio is fullscreen, so lock body scroll while mounted so the landing
   // page's scroll behavior doesn't bleed in.
   useEffect(() => {
     const prev = document.body.style.overflow;
@@ -128,17 +131,52 @@ function normalizeProps(type: string, props: Record<string, unknown>): Record<st
 function Capturia() {
   const [overlays, setOverlays] = useState<OverlaySpec[]>([]);
   const [lastSent, setLastSent] = useState("");
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const firstRunCheckedRef = useRef(false);
   const { appendMessage } = useCopilotChat();
   const { isRecording, startRecording, stopRecording } = useRecorder();
+  const vault = useKeyVault();
+
+  // Cmd+, opens settings (Mac standard). Works while studio window has focus.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === ",") {
+        e.preventDefault();
+        setSettingsOpen((v) => !v);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  // First-run: if desktop and no BYOK keys saved yet, open Settings once on
+  // mount. firstRunCheckedRef makes this fire exactly once per app session
+  // even if the keys list updates as the user saves.
+  useEffect(() => {
+    if (firstRunCheckedRef.current) return;
+    if (!vault.isReady) return;
+    firstRunCheckedRef.current = true;
+    if (vault.isDesktop && !vault.keys.some((k) => k.has)) {
+      setSettingsOpen(true);
+    }
+  }, [vault.isReady, vault.isDesktop, vault.keys]);
 
   const { isListening, interimTranscript, speechStatus, lastError, isSupported, startListening, stopListening } =
-    useVoiceCapture((text) => {
+    useStudioVoice((text) => {
       if (text.split(/\s+/).length < 2) return;
       setLastSent(text);
       appendMessage(
         new TextMessage({ content: `[VOICE] ${text}`, role: MessageRole.User })
       );
     });
+
+  // Desktop push-to-talk: Cmd+Alt+Space toggles voice from anywhere on the OS.
+  // No-op on web (window.capturia is only present inside Electron renderer).
+  useDesktopHotkey("toggle-voice", () => {
+    if (!isSupported) return;
+    if (isListening) stopListening();
+    else startListening();
+  });
 
   // AG-UI Shared State: agent always knows what's currently on screen
   useCopilotReadable({
@@ -381,8 +419,23 @@ function Capturia() {
         isVoiceSupported={isSupported}
       />
 
-      {/* Top-right HUD: LIVE pill + clock + record */}
+      {/* Top-right HUD: settings + LIVE pill + clock + record */}
       <div className="absolute top-3 right-4 z-30 flex items-center gap-3">
+        {/* Settings (desktop only) */}
+        {vault.isDesktop && (
+          <button
+            onClick={() => setSettingsOpen(true)}
+            title="Settings (Cmd+,)"
+            aria-label="Settings"
+            className="w-8 h-8 flex items-center justify-center rounded-full bg-white/10 text-white/50 hover:bg-white/20 hover:text-white/90 border border-white/10 transition-all"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            </svg>
+          </button>
+        )}
+
         {/* Record toggle */}
         <button
           onClick={() => (isRecording ? stopRecording() : startRecording())}
@@ -413,6 +466,15 @@ function Capturia() {
           </span>
         </div>
       </div>
+
+      <SettingsModal
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        keys={vault.keys}
+        isReady={vault.isReady}
+        save={vault.save}
+        clear={vault.clear}
+      />
     </div>
   );
 }

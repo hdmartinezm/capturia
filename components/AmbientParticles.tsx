@@ -29,7 +29,7 @@ function generateParticles(): Particle[] {
 }
 
 export default function AmbientParticles({ active }: Props) {
-  // Generate particles only after client mount — keeps Math.random out of render
+  // Generate particles only after client mount. Keeps Math.random out of render
   // and avoids any SSR/CSR mismatch.
   const [particles, setParticles] = useState<Particle[] | null>(null);
   useEffect(() => {

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 const BAR_COUNT = 4;
 
 // Returns an array of BAR_COUNT values (0–1) representing mic energy per frequency band.
-// Uses a separate getUserMedia stream from the SpeechRecognition one — browsers allow
+// Uses a separate getUserMedia stream from the SpeechRecognition one. Browsers allow
 // multiple simultaneous consumers of the same mic.
 export function useMicLevel(isActive: boolean): number[] {
   const [levels, setLevels] = useState<number[]>(new Array(BAR_COUNT).fill(0));
@@ -53,7 +53,7 @@ export function useMicLevel(isActive: boolean): number[] {
               let sum = 0;
               const start = 1 + i * groupSize;
               for (let j = start; j < start + groupSize; j++) sum += freqData[j];
-              // 200 ≈ typical speech amplitude — clamp to 0–1
+              // 200 ≈ typical speech amplitude; clamp to 0 to 1
               return Math.min(1, sum / groupSize / 200);
             })
           );
@@ -62,7 +62,7 @@ export function useMicLevel(isActive: boolean): number[] {
         rafRef.current = requestAnimationFrame(tick);
       })
       .catch(() => {
-        /* mic denied or unavailable — levels stay at 0 */
+        /* mic denied or unavailable: levels stay at 0 */
       });
 
     return () => {

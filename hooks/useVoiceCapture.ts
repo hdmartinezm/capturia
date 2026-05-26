@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-// Web Speech API types — not in all TS DOM lib versions
+// Web Speech API types (not in all TS DOM lib versions)
 interface SpeechRecognitionEvent extends Event {
   resultIndex: number;
   results: SpeechRecognitionResultList;
@@ -38,7 +38,7 @@ export interface VoiceCaptureState {
   isListening: boolean;
   interimTranscript: string;
   speechStatus: string;
-  lastError: string;   // persists even when status cycles — tells us the real failure
+  lastError: string;   // persists even when status cycles, so we see the real failure
   isSupported: boolean;
   startListening: () => void;
   stopListening: () => void;
@@ -60,10 +60,38 @@ export function useVoiceCapture(
 
   useEffect(() => {
     const SR = getSR();
-    setIsSupported(!!SR);
     if (!SR) {
+      setIsSupported(false);
       setSpeechStatus("not supported");
       return;
+    }
+
+    // Electron renderer: webkitSpeechRecognition exists, but the Web Speech
+    // backend needs Google's private Speech API key (shipped only inside
+    // Chrome). Electron doesn't have it, so every call returns "network".
+    // Hide voice in desktop until local whisper.cpp lands.
+    const inDesktop = (window as unknown as { capturia?: { isDesktop?: boolean } })
+      .capturia?.isDesktop === true;
+    if (inDesktop) {
+      setIsSupported(false);
+      setSpeechStatus("not supported");
+      return;
+    }
+
+    // Brave is Chromium-based so SpeechRecognition exists, but Brave Shields
+    // blocks the Google speech endpoint by default and the API never returns
+    // results. Detect Brave so the voice button hides instead of throwing a
+    // confusing 'network' error mid-use.
+    const brave = (navigator as unknown as {
+      brave?: { isBrave?: () => Promise<boolean> };
+    }).brave;
+    if (brave?.isBrave) {
+      brave.isBrave().then((isBrave) => {
+        setIsSupported(!isBrave);
+        if (isBrave) setSpeechStatus("not supported");
+      });
+    } else {
+      setIsSupported(true);
     }
 
     const recognition = new SR();
@@ -71,9 +99,9 @@ export function useVoiceCapture(
     recognition.interimResults = true;
     recognition.lang = "en-US";
 
-    // Pipeline stages — each one logs so we know exactly where it breaks
-    recognition.onstart = () => setSpeechStatus("started — waiting for audio…");
-    recognition.onaudiostart = () => setSpeechStatus("audio received — speak now");
+    // Pipeline stages: each one logs so we know exactly where it breaks
+    recognition.onstart = () => setSpeechStatus("started, waiting for audio…");
+    recognition.onaudiostart = () => setSpeechStatus("audio received, speak now");
     recognition.onspeechstart = () => setSpeechStatus("speech detected…");
 
     recognition.onresult = (event: SpeechRecognitionEvent) => {
@@ -96,7 +124,7 @@ export function useVoiceCapture(
 
     recognition.onend = () => {
       if (isListeningRef.current) {
-        // 600ms pause before restarting — stops the crazy rapid cycling and
+        // 600ms pause before restarting. Stops the crazy rapid cycling and
         // gives the status text time to be readable between attempts
         setSpeechStatus("restarting…");
         restartTimerRef.current = setTimeout(() => {

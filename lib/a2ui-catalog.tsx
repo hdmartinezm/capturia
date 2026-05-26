@@ -1,7 +1,7 @@
 /**
  * Real A2UI catalog object built from our typed component definitions and
  * React renderer adapters. Uses @copilotkit/a2ui-renderer's createCatalog
- * directly — single source of truth for both schema (system prompt) and
+ * directly. Single source of truth for both schema (system prompt) and
  * renderer registration.
  *
  * This catalog is currently exposed for future <A2UIRenderer surfaceId=…/>
@@ -25,7 +25,7 @@ import LiveBadge from "@/components/overlays/LiveBadge";
 import StatRing from "@/components/overlays/StatRing";
 import BigCounter from "@/components/overlays/BigCounter";
 
-// Cast at the boundary: project zod (v4) vs A2UI's bundled zod (v3) — same
+// Cast at the boundary: project zod (v4) vs A2UI's bundled zod (v3). Same
 // runtime shape, different branded TS types. See catalog-schema.ts for context.
 const definitions = catalogDefinitions as unknown as CatalogDefinitions;
 

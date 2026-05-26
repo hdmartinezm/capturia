@@ -14,7 +14,7 @@ export function useRecorder(): RecorderState {
 
   const startRecording = useCallback(async () => {
     try {
-      // Capture current browser tab — pre-selects this tab in Chrome's picker
+      // Capture current browser tab. Pre-selects this tab in Chrome's picker
       const displayStream = await navigator.mediaDevices.getDisplayMedia({
         video: { frameRate: 30 } as MediaTrackConstraints,
         audio: false,
@@ -34,7 +34,7 @@ export function useRecorder(): RecorderState {
         });
         audioTracks = audioStream.getAudioTracks();
       } catch {
-        // Mic unavailable — record video-only
+        // Mic unavailable: record video-only
       }
 
       const stream = new MediaStream([
@@ -80,7 +80,7 @@ export function useRecorder(): RecorderState {
         if (recorder.state !== "inactive") recorder.stop();
       });
     } catch {
-      // User cancelled the picker or permission denied — no-op
+      // User cancelled the picker or permission denied (no-op)
     }
   }, []);
 
