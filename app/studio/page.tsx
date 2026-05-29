@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import { CopilotKit } from "@copilotkit/react-core";
 import {
   useCopilotReadable,
@@ -15,13 +16,23 @@ import HudClock from "@/components/HudClock";
 import AmbientParticles from "@/components/AmbientParticles";
 // Real A2UI catalog object: createCatalog() is invoked at module load,
 // registering all 12 component renderers against the typed Zod definitions.
-// Currently exposed for future <A2UIRenderer/> use; runtime stays AG-UI.
+// Stashed on window for inspection; rendered live by Surface Mode (the A2UI
+// renderer is loaded lazily via the dynamic import below, never on the server).
 import { capturiaCatalog } from "@/lib/a2ui-catalog";
 
 if (typeof window !== "undefined") {
-  // Surface the catalog for inspection / future A2UI surface hosting.
+  // Surface the catalog for inspection / live A2UI surface hosting.
   (window as unknown as { capturiaCatalog?: unknown }).capturiaCatalog = capturiaCatalog;
 }
+
+// Surface Mode renderer. @copilotkit/a2ui-renderer is client-only (createContext
+// at module load), so its render path is code-split and loaded with ssr:false,
+// keeping A2UIProvider/A2UIRenderer off the server. Only mounted when the
+// operator opts into Surface Mode.
+const A2uiOverlayLayer = dynamic(() => import("@/components/A2uiOverlayLayer"), {
+  ssr: false,
+  loading: () => null,
+});
 import { useStudioVoice } from "@/hooks/useStudioVoice";
 import { useRecorder } from "@/hooks/useRecorder";
 import { useDesktopHotkey } from "@/hooks/useDesktopHotkey";
@@ -137,12 +148,18 @@ function Capturia({ vault, activeProvider, setActiveProvider }: CapturiaProps) {
   // future native camera extension) captures as the published feed.
   const [outputMode, setOutputMode] = useState(false);
 
+  // Surface Mode: render the SAME overlays through the real A2UI runtime
+  // (A2UIProvider + <A2UIRenderer> + the registered capturiaCatalog) instead of
+  // the direct React renderer. Opt-in so the AG-UI hot path stays the default.
+  const [surfaceMode, setSurfaceMode] = useState(false);
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("out") === "1") setOutputMode(true);
+    if (params.get("surface") === "1") setSurfaceMode(true);
   }, []);
 
-  // Cmd+, opens settings; Cmd/Ctrl+Shift+O toggles clean Program Output.
+  // Cmd+, settings; Cmd/Ctrl+Shift+O clean Program Output; Cmd/Ctrl+Shift+A A2UI Surface Mode.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === ",") {
@@ -152,6 +169,10 @@ function Capturia({ vault, activeProvider, setActiveProvider }: CapturiaProps) {
       if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === "o") {
         e.preventDefault();
         setOutputMode((v) => !v);
+      }
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === "a") {
+        e.preventDefault();
+        setSurfaceMode((v) => !v);
       }
     };
     window.addEventListener("keydown", onKey);
@@ -422,6 +443,65 @@ function Capturia({ vault, activeProvider, setActiveProvider }: CapturiaProps) {
     },
   });
 
+  // A2UI Action: compose a WHOLE scene in one call. The "push a whole UI at once"
+  // counterpart to single add_overlay calls, used when the speaker sets up or
+  // lays out several components together (an intro, a results screen). Merges by
+  // id like add_overlay; replace=true wipes the stage first for a fresh scene.
+  // Renders identically in both the direct and A2UI Surface Mode renderers.
+  useCopilotAction({
+    name: "compose_scene",
+    description:
+      "Compose a whole overlay scene in ONE call. Prefer this over multiple add_overlay calls when the user sets up, lays out, or shows several components together (e.g. an intro: LowerThird + LiveBadge + MetricsPanel). Pass `elements` as a JSON array; each item is { id, type, position?, props } using the same catalog types, positions, and prop shapes as add_overlay. Set replace=true to clear all existing overlays first (use when starting a fresh scene).",
+    parameters: [
+      {
+        name: "elements",
+        type: "string",
+        description:
+          'JSON array of overlays, e.g. [{"id":"lt-1","type":"LowerThird","position":"bottom-left","props":{"name":"Alex","subtitle":"Founder, Acme"}},{"id":"live-1","type":"LiveBadge","position":"top-left","props":{}}]',
+        required: true,
+      },
+      {
+        name: "replace",
+        type: "boolean",
+        description: "If true, remove all existing overlays before adding this scene. Default false (merge by id).",
+        required: false,
+      },
+    ],
+    handler: ({ elements, replace }) => {
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(elements);
+      } catch {
+        console.error("compose_scene: invalid elements JSON:", elements);
+        return;
+      }
+      if (!Array.isArray(parsed)) return;
+      const specs: OverlaySpec[] = [];
+      for (const raw of parsed) {
+        if (!raw || typeof raw !== "object") continue;
+        const it = raw as Record<string, unknown>;
+        if (typeof it.id !== "string" || typeof it.type !== "string") continue;
+        const props = normalizeProps(
+          it.type,
+          (it.props && typeof it.props === "object" ? it.props : {}) as Record<string, unknown>
+        );
+        specs.push({
+          id: it.id,
+          type: it.type,
+          position: it.position as OverlayPosition,
+          props,
+        } as OverlaySpec);
+      }
+      if (specs.length === 0) return;
+      setOverlays((prev) => {
+        const base = replace ? [] : prev;
+        const incoming = new Set(specs.map((s) => s.id));
+        const kept = base.filter((o) => !incoming.has(o.id));
+        return [...kept, ...specs];
+      });
+    },
+  });
+
   return (
     <div
       className={`relative w-screen h-screen bg-black overflow-hidden ${
@@ -434,8 +514,14 @@ function Capturia({ vault, activeProvider, setActiveProvider }: CapturiaProps) {
       {/* Layer 0.5: ambient floating particles when voice is active (hidden in clean output) */}
       {!outputMode && <AmbientParticles active={isListening} />}
 
-      {/* Layer 1: A2UI overlay components (the published feed) */}
-      <OverlayLayer overlays={overlays} />
+      {/* Layer 1: overlay components (the published feed). Surface Mode renders
+          the same overlays through the live A2UI runtime; default is the direct
+          React renderer. Both read the one `overlays` source of truth. */}
+      {surfaceMode ? (
+        <A2uiOverlayLayer overlays={overlays} />
+      ) : (
+        <OverlayLayer overlays={overlays} />
+      )}
 
       {/* Everything below is operator chrome, hidden in Program Output so OBS /
           the virtual camera capture only the webcam + overlays. */}
@@ -482,6 +568,20 @@ function Capturia({ vault, activeProvider, setActiveProvider }: CapturiaProps) {
                 setDeckName(fileName);
               }}
             />
+
+            {/* Toggle A2UI Surface Mode: render overlays through the live A2UI
+                runtime instead of the direct React renderer (Cmd+Shift+A) */}
+            <button
+              onClick={() => setSurfaceMode((v) => !v)}
+              title="A2UI Surface Mode: render overlays via the live A2UI runtime (Cmd+Shift+A)"
+              className={`text-[11px] font-mono uppercase tracking-widest px-3 py-1.5 rounded-full border transition-all ${
+                surfaceMode
+                  ? "bg-cyan-500/20 text-cyan-200 border-cyan-400/40 shadow-[0_0_12px_rgba(34,211,238,0.25)]"
+                  : "bg-white/10 text-white/60 hover:bg-white/20 hover:text-white border-white/10"
+              }`}
+            >
+              A2UI
+            </button>
 
             {/* Enter clean Program Output (for OBS / virtual camera) */}
             <button

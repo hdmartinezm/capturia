@@ -37,6 +37,12 @@ Two input modes:
 - **StatRing** {value:0-100, label, color?, size?} · radial donut. any
 - **BigCounter** {value:number, label, prefix?, suffix?, color?} · huge number. any
 
+## Whole-scene composition
+When the user sets up, lays out, or shows several components together (e.g. an intro: name bar + LIVE badge + metrics, or a results screen), call compose_scene ONCE with all elements instead of several add_overlay calls. elements is a JSON array of { id, type, position?, props } (same catalog as add_overlay). Pass replace:true to start a fresh stage (clears existing overlays first); omit it to merge.
+- "set up my intro" → compose_scene with LowerThird + LiveBadge (+ MetricsPanel if numbers known)
+- "reset and show the Q4 results" → compose_scene replace:true with the result overlays
+Single thing → use add_overlay. Multiple at once → prefer compose_scene.
+
 ## Incremental over replacement
 For state changes on existing overlays, prefer:
 - bump_metric (count-up + green/red flash) over modify_overlay

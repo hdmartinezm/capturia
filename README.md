@@ -70,6 +70,8 @@ Press `Cmd+,` to open Settings, paste your own API key (encrypted via OS Keychai
 
 **Drop your pitch deck.** Drag a PDF onto the studio (or click **Deck**). Capturia reads it on your device, primes the agent with your real titles and numbers, and builds a rail of cue cards you trigger by click or by voice.
 
+**Surface Mode (A2UI).** Toggle the **A2UI** button (or `Cmd/Ctrl+Shift+A`, or open `/studio?surface=1`) to render the live overlays through the genuine A2UI runtime (the registered `capturiaCatalog` rendered by `<A2UIRenderer>` against the A2UI v0.9 protocol) instead of the direct React renderer. Same overlays, same look; it just proves the typed catalog is a real renderable surface, not only a schema. It composes with Program Output, so the A2UI-rendered feed is what OBS captures.
+
 ---
 
 ## Stack
@@ -96,7 +98,7 @@ The agent doesn't manipulate the DOM. It sees a typed catalog of components and 
 
 **Backend** (`app/api/copilotkit/[[...slug]]/route.ts`) wraps `BuiltInAgent` from `@copilotkit/runtime/v2`. Single-route mode, in-memory thread state, `maxSteps: 1` so each utterance is one model call (no internal roundtrip), `temperature: 0` for deterministic tool selection. ~150 ms TTFT on Gemini 2.5 Flash-Lite.
 
-**A2UI catalog** (`lib/a2ui-catalog.tsx`) uses real `createCatalog` from `@copilotkit/a2ui-renderer` to register each Zod-defined component with its React adapter renderer. The Zod schemas in `lib/catalog.ts` are the single source of truth: they define the prop shape the agent must produce *and* are imported by the renderers themselves. The catalog object is exposed at `window.capturiaCatalog` for live inspection and is the foundation for the upcoming `<A2UIRenderer>` surface mode.
+**A2UI catalog** (`lib/a2ui-catalog.tsx`) uses real `createCatalog` from `@copilotkit/a2ui-renderer` to register each Zod-defined component with its React adapter renderer. The Zod schemas in `lib/catalog.ts` are the single source of truth: they define the prop shape the agent must produce *and* are imported by the renderers themselves. The catalog object is exposed at `window.capturiaCatalog` for live inspection and powers **Surface Mode** (`Cmd/Ctrl+Shift+A`), which renders the same overlays through the genuine `<A2UIRenderer>` + A2UI v0.9 pipeline instead of the direct React renderer.
 
 **Latency budget** for a single voice utterance:
 
@@ -133,20 +135,21 @@ Subsequent updates use the same loop but trigger different visual responses. `bu
 
 ---
 
-## The six tools
+## The seven tools
 
-The agent calls one of six typed tools. Never freeform DOM mutations.
+The agent calls one of seven typed tools. Never freeform DOM mutations.
 
 | Tool | Purpose |
 | --- | --- |
 | `add_overlay(id, type, position, props)` | Register a new overlay |
+| `compose_scene(elements, replace?)` | Lay out a whole multi-element scene in one call (push a whole UI at once) |
 | `modify_overlay(id, props)` | Wholesale prop replacement (rare; the agent prefers the incremental ones) |
 | `remove_overlay(id)` | Remove one overlay or `"all"` |
 | `move_overlay(id, position)` | Smooth FLIP transition between anchors |
 | `append_chart_data(id, values)` | Grow a `FloatingChart` over time |
 | `bump_metric(id, label, value, delta)` | Update one row in a `MetricsPanel` with count-up + flash |
 
-The system prompt nudges the agent toward incremental tools (`bump_metric`, `append_chart_data`, `move_overlay`) over full replacements. That's where the "live" feel comes from: values count up, points slide in, panels move instead of being rebuilt.
+The system prompt nudges the agent toward incremental tools (`bump_metric`, `append_chart_data`, `move_overlay`) over full replacements. That's where the "live" feel comes from: values count up, points slide in, panels move instead of being rebuilt. For "set up my intro" / "reset and show the results" moments, `compose_scene` lets the agent place several components at once (with optional `replace` to clear the stage first) rather than firing a burst of single `add_overlay` calls.
 
 ---
 
@@ -162,7 +165,7 @@ A few decisions worth calling out for anyone reading the code:
 
 **FLIP transitions.** When `move_overlay` changes an overlay's anchor class, the inner wrapper measures `getBoundingClientRect()` before and after, then animates the delta as a transient `transform: translate(...)`. The outer Tailwind transforms (e.g., `-translate-x-1/2`) are preserved on the parent, so the slide composes cleanly with anchor centering.
 
-**A2UI catalog is registered, not yet runtime-rendered.** `lib/a2ui-catalog.tsx` invokes `createCatalog` and exposes the result on `window.capturiaCatalog`. The catalog is the typed contract between the system prompt and the renderers, but the runtime hot path still flows through CopilotKit AG-UI tool calls (faster and simpler for per-component updates). Surface-mode rendering (`<A2UIRenderer surfaceId=…/>`) is the next milestone, which would let the agent push whole UIs at once.
+**A2UI catalog drives two render paths.** `lib/a2ui-catalog.tsx` invokes `createCatalog` (catalogId `capturia`) and exposes the result on `window.capturiaCatalog`. The default hot path flows through CopilotKit AG-UI tool calls into the direct React renderer (`OverlayLayer`), the fastest and simplest path for per-component live updates. **Surface Mode** (opt-in via `?surface=1`, `Cmd/Ctrl+Shift+A`, or the **A2UI** HUD button) renders the *same* overlays state through the genuine A2UI runtime: each overlay becomes its own A2UI v0.9 surface (`createSurface` + `updateComponents`, root id `"root"`), fed to a self-managed `A2UIProvider` and rendered by `<A2UIRenderer surfaceId=…/>` against the registered catalog. `lib/a2ui-scene.ts` does the `OverlaySpec → A2UI message` translation; `components/A2uiOverlayLayer.tsx` (loaded via `next/dynamic` `ssr:false`, since the renderer is client-only) reuses `OverlayLayer`'s positioning/enter-exit/FLIP machinery so both modes look identical. One source of truth (`overlays`), two renderers, so the AG-UI tools, deck cue matching, and `compose_scene` drive both unchanged.
 
 **Why Gemini 2.5 Flash-Lite, not 3.x.** Gemini 3.x stamps tool calls with a `thought_signature` that must be echoed back on subsequent turns. CopilotKit's AG-UI roundtrip doesn't propagate it yet, so tool-using flows on 3.x error after the second tool call. Disabling thinking (`thinkingBudget: 0`) is allowlist-gated on 3.x, so we can't flip our way out. 2.5 Flash-Lite has thinking off by default and works cleanly. The proper fix is a custom-agent factory that captures and replays signatures (~1 to 2 hours of work, planned for after the demo).
 
@@ -202,9 +205,13 @@ lib/
 
 ## Roadmap
 
+**Shipped:** Desktop BYOK key vault, deck-aware cue cards, Program Output / OBS virtual-camera path, and **Surface-mode A2UI rendering** (the registered catalog now renders live through `<A2UIRenderer>`; `compose_scene` lets the agent push a whole UI at once).
+
+Next:
+
 - **Face / body tracking**: overlays that follow the speaker (MediaPipe)
 - **Real-time data feeds**: `MetricsPanel` connected to live revenue / analytics endpoints
-- **Surface-mode A2UI rendering**: agent pushes whole UIs at once via `<A2UIRenderer>`
+- **Agent-authored A2UI surfaces**: let the model emit the A2UI tree directly (CopilotKit runtime `a2ui` middleware) once `thought_signature` / TTFT tradeoffs are handled; today the client translates tool calls into surfaces
 - **Extension catalog**: third-party overlay registrations (sponsor cards, poll widgets, branded components)
 - **Speech fallback**: Deepgram or Groq Whisper for Brave / Firefox / mobile
 - **Multi-language voice prompt**: currently English-only

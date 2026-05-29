@@ -4,9 +4,10 @@
  * directly. Single source of truth for both schema (system prompt) and
  * renderer registration.
  *
- * This catalog is currently exposed for future <A2UIRenderer surfaceId=…/>
- * use; the runtime hot path still flows through CopilotKit AG-UI tool calls
- * for stability.
+ * This catalog backs Surface Mode: components/A2uiOverlayLayer.tsx mounts it on
+ * an A2UIProvider and renders each overlay through <A2UIRenderer surfaceId=…/>.
+ * The default hot path still flows through CopilotKit AG-UI tool calls into the
+ * direct React renderer (OverlayLayer); both read the one overlays state.
  */
 "use client";
 import { createCatalog, type CatalogDefinitions } from "@copilotkit/a2ui-renderer";
