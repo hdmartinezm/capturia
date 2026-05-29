@@ -1,19 +1,26 @@
 "use client";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { POSITION_CLASSES } from "@/lib/positions";
 import { OverlayComponent } from "@/components/overlays";
 import type { OverlaySpec } from "@/lib/types";
 
 interface Props {
   overlays: OverlaySpec[];
+  // Optional leaf renderer. When provided, each overlay's inner content is
+  // rendered by this instead of the direct React <OverlayComponent>. Surface
+  // Mode passes a renderer that routes through the real A2UI pipeline. All
+  // positioning / enter-exit / FLIP / stagger machinery below stays the same.
+  renderItem?: (
+    overlay: OverlaySpec,
+    opts: { exiting: boolean; enterIndex: number }
+  ) => React.ReactNode;
 }
 
 const EXIT_MS = 320;
-const STAGGER_MS = 60;
 
 type Tracked = { overlay: OverlaySpec; exiting: boolean; enterIndex: number };
 
-export default function OverlayLayer({ overlays }: Props) {
+export default function OverlayLayer({ overlays, renderItem }: Props) {
   const [tracked, setTracked] = useState<Tracked[]>(() =>
     overlays.map((o, i) => ({ overlay: o, exiting: false, enterIndex: i }))
   );
@@ -76,20 +83,18 @@ export default function OverlayLayer({ overlays }: Props) {
   return (
     <div className="absolute inset-0 pointer-events-none">
       {tracked.map(({ overlay, exiting, enterIndex }) => {
+        const inner = renderItem ? (
+          renderItem(overlay, { exiting, enterIndex })
+        ) : (
+          <OverlayComponent overlay={overlay} exiting={exiting} enterIndex={enterIndex} />
+        );
         if (overlay.type === "Letterbox") {
-          return (
-            <OverlayComponent
-              key={overlay.id}
-              overlay={overlay}
-              exiting={exiting}
-              enterIndex={enterIndex}
-            />
-          );
+          return <Fragment key={overlay.id}>{inner}</Fragment>;
         }
         const posClass = POSITION_CLASSES[overlay.position] ?? "top-4 left-4";
         return (
           <PositionedOverlay key={overlay.id} posClass={posClass} exiting={exiting}>
-            <OverlayComponent overlay={overlay} exiting={exiting} enterIndex={enterIndex} />
+            {inner}
           </PositionedOverlay>
         );
       })}
@@ -143,5 +148,3 @@ function PositionedOverlay({
     </div>
   );
 }
-
-export { STAGGER_MS };

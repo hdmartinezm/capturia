@@ -13,9 +13,9 @@ import LiveBadge from "./LiveBadge";
 import StatRing from "./StatRing";
 import BigCounter from "./BigCounter";
 
-const STAGGER_MS = 60;
+export const STAGGER_MS = 60;
 
-const ENTER_CLASS: Record<OverlaySpec["type"], string> = {
+export const ENTER_CLASS: Record<OverlaySpec["type"], string> = {
   MetricsPanel: "overlay-enter",
   Timeline: "overlay-enter",
   LowerThird: "overlay-enter-left",
@@ -30,6 +30,23 @@ const ENTER_CLASS: Record<OverlaySpec["type"], string> = {
   BigCounter: "overlay-enter",
 };
 
+// The enter/exit animation wrapper props for an overlay. Shared so the direct
+// React path (OverlayComponent) and the A2UI Surface Mode host (A2uiOverlay)
+// animate identically; the keyframes live on this wrapper, not inside the
+// components, so they compose with either inner renderer.
+export function overlayAnimProps(
+  type: OverlaySpec["type"],
+  exiting: boolean,
+  enterIndex: number
+): { className: string; style?: React.CSSProperties } {
+  const className = exiting ? "overlay-exit" : ENTER_CLASS[type];
+  const style =
+    !exiting && enterIndex > 0
+      ? { animationDelay: `${enterIndex * STAGGER_MS}ms` }
+      : undefined;
+  return { className, style };
+}
+
 interface Props {
   overlay: OverlaySpec;
   exiting?: boolean;
@@ -40,11 +57,7 @@ export function OverlayComponent({ overlay, exiting = false, enterIndex = 0 }: P
   if (overlay.type === "Letterbox") {
     return <Letterbox {...overlay.props} exiting={exiting} />;
   }
-  const className = exiting ? "overlay-exit" : ENTER_CLASS[overlay.type];
-  const style =
-    !exiting && enterIndex > 0
-      ? { animationDelay: `${enterIndex * STAGGER_MS}ms` }
-      : undefined;
+  const { className, style } = overlayAnimProps(overlay.type, exiting, enterIndex);
   return (
     <div className={className} style={style}>
       <Inner overlay={overlay} />
