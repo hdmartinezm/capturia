@@ -1,0 +1,8 @@
+{
+  "tags": {
+    "Project": "Agente WebCam",
+    "Environment": "production",
+    "ManagedBy": "amplify",
+    "Repository": "AndresCarreonDiaz/capturia"
+  }
+}
