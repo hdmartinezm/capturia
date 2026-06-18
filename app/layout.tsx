@@ -21,13 +21,13 @@ const instrumentSerif = Instrument_Serif({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://capturia.app"),
-  title: "Capturia · Broadcast-grade graphics on your camera, just by talking",
+  title: "Capturia · Gráficos profesionales en tu cámara, solo hablando",
   description:
-    "Speak your numbers, your name, your headline, and Capturia puts broadcast-grade graphics on your camera instantly. For founders, speakers, and creators on Zoom, Teams, and Meet. Free to start.",
+    "Di tus números, tu nombre, tu mensaje, y Capturia pone gráficos profesionales en tu cámara al instante. Para emprendedores, presentadores y creadores en Zoom, Teams y Meet. Gratis para empezar.",
   openGraph: {
-    title: "Capturia · Broadcast-grade graphics on your camera, just by talking",
+    title: "Capturia · Gráficos profesionales en tu cámara, solo hablando",
     description:
-      "Speak your numbers, your name, your headline, and Capturia puts them on your camera instantly. Works in Zoom, Teams, and Meet.",
+      "Di tus números, tu nombre, tu mensaje, y Capturia los pone en tu cámara al instante. Funciona en Zoom, Teams y Meet.",
     type: "website",
   },
 };
@@ -39,7 +39,7 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
+      lang="es"
       className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable} antialiased`}
     >
       <body>{children}</body>

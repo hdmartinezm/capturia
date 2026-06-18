@@ -54,7 +54,7 @@ export default function LiveCaptions({ text, lastSent, speechStatus, lastError, 
       {lastSent && !text && !lastError && (
         <div className="bg-white/5 border border-white/10 rounded-xl px-4 py-1.5 max-w-xl w-full text-center">
           <p className="text-white/40 text-xs font-mono">
-            sent: &ldquo;{lastSent}&rdquo;
+            enviado: &ldquo;{lastSent}&rdquo;
           </p>
         </div>
       )}

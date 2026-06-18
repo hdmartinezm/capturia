@@ -25,7 +25,7 @@ export default function DeckDropzone({ onLoaded, provider }: Props) {
       if (!file) return;
       if (!/\.pdf$/i.test(file.name)) {
         setStatus("error");
-        setError("Drop a PDF. PowerPoint import is coming to the desktop app.");
+        setError("Suelta un PDF. La importación de PowerPoint viene en la app de escritorio.");
         return;
       }
       setStatus("parsing");
@@ -46,7 +46,7 @@ export default function DeckDropzone({ onLoaded, provider }: Props) {
         setStatus("idle");
       } catch (err) {
         setStatus("error");
-        setError(err instanceof Error ? err.message : "Could not read that PDF.");
+        setError(err instanceof Error ? err.message : "No se pudo leer ese PDF.");
       }
     },
     [onLoaded, provider]
@@ -90,13 +90,13 @@ export default function DeckDropzone({ onLoaded, provider }: Props) {
       <button
         onClick={() => inputRef.current?.click()}
         className="flex items-center gap-1.5 text-[11px] font-mono uppercase tracking-widest px-3 py-1.5 rounded-full bg-white/10 text-white/60 hover:bg-white/20 hover:text-white border border-white/10 transition-all"
-        title="Load a pitch deck (PDF)"
+        title="Cargar presentación (PDF)"
       >
         <span className="text-[var(--phosphor,#52ff8b)]">+</span>
         {status === "parsing"
-          ? "Reading deck…"
+          ? "Leyendo deck…"
           : status === "generating"
-          ? "Designing overlays…"
+          ? "Diseñando overlays…"
           : "Deck"}
       </button>
       <input
@@ -117,9 +117,9 @@ export default function DeckDropzone({ onLoaded, provider }: Props) {
       {dragging && (
         <div className="fixed inset-0 z-40 pointer-events-none flex items-center justify-center bg-black/60 backdrop-blur-sm">
           <div className="px-8 py-6 rounded-2xl border-2 border-dashed border-white/40 text-center">
-            <div className="text-white text-lg font-medium">Drop your pitch deck</div>
+            <div className="text-white text-lg font-medium">Suelta tu presentación</div>
             <div className="text-white/50 text-xs font-mono mt-1.5 uppercase tracking-widest">
-              PDF · stays on your device
+              PDF · se queda en tu dispositivo
             </div>
           </div>
         </div>

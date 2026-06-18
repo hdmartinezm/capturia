@@ -13,10 +13,10 @@ interface Props {
 }
 
 const QUICK_ACTIONS: { emoji: string; label: string; prompt: string }[] = [
-  { emoji: "👤", label: "Lower third",   prompt: "Add a lower third with my name as Alex, subtitle Founder of Acme" },
-  { emoji: "📊", label: "Metrics",       prompt: "Add Q4 metrics: revenue $1.2M (+24%), users 18K (+12%), churn 2.1% (-0.4%)" },
-  { emoji: "🎯", label: "Progress 73%",  prompt: "Add a progress bar at 73% with label Demo Loading" },
-  { emoji: "✨", label: "Keywords",      prompt: "Highlight keywords AI, growth, demo with auto color" },
+  { emoji: "👤", label: "Tercio inferior",   prompt: "Agrega un tercio inferior con mi nombre Alex, subtítulo Fundador de Acme" },
+  { emoji: "📊", label: "Métricas",          prompt: "Agrega métricas Q4: ingresos $1.2M (+24%), usuarios 18K (+12%), churn 2.1% (-0.4%)" },
+  { emoji: "🎯", label: "Progreso 73%",      prompt: "Agrega una barra de progreso al 73% con etiqueta Cargando Demo" },
+  { emoji: "✨", label: "Palabras clave",    prompt: "Resalta las palabras clave IA, crecimiento, demo con color auto" },
 ];
 
 export default function CommandBar({
@@ -67,7 +67,7 @@ export default function CommandBar({
       {showQuickActions && (
         <div className="mb-2 flex flex-wrap items-center gap-2 justify-center">
           <span className="text-white/40 text-[10px] uppercase tracking-[0.2em] font-mono mr-1">
-            Try
+            Prueba
           </span>
           {QUICK_ACTIONS.map((qa, i) => (
             <button
@@ -117,10 +117,10 @@ export default function CommandBar({
           onChange={(e) => setInput(e.target.value)}
           placeholder={
             isListening
-              ? "Listening to your voice…"
+              ? "Escuchando tu voz…"
               : busy
-              ? "Agent thinking..."
-              : 'Try: "Add a lower third with my name" or "Remove all"'
+              ? "Agente pensando..."
+              : 'Prueba: "Agrega un tercio inferior con mi nombre" o "Quita todo"'
           }
           disabled={busy}
           className="flex-1 bg-transparent text-white placeholder:text-white/30 text-sm outline-none font-mono"
@@ -133,7 +133,7 @@ export default function CommandBar({
             onClick={onClear}
             className="text-white/30 hover:text-white/70 text-xs font-mono transition-colors shrink-0"
           >
-            clear
+            limpiar
           </button>
         )}
 
@@ -142,7 +142,7 @@ export default function CommandBar({
           <button
             type="button"
             onClick={onToggleVoice}
-            title={isListening ? "Stop listening" : "Start voice mode"}
+            title={isListening ? "Dejar de escuchar" : "Activar modo voz"}
             className={`shrink-0 w-8 h-8 rounded-xl flex items-center justify-center transition-all ${
               isListening
                 ? "bg-green-500/20 text-green-400 border border-green-500/40"
@@ -188,12 +188,12 @@ export default function CommandBar({
       </form>
       {!isVoiceSupported && !isDesktop && (
         <p className="mt-2 text-center text-[10px] font-mono uppercase tracking-[0.2em] text-white/30">
-          Voice mode needs Chrome or Edge. Brave Shields and Firefox block it.
+          El modo voz necesita Chrome o Edge. Brave Shields y Firefox lo bloquean.
         </p>
       )}
       {isDesktop && isVoiceSupported && (
         <p className="mt-2 text-center text-[10px] font-mono uppercase tracking-[0.2em] text-white/30">
-          Press <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white/70 font-mono text-[10px] mx-0.5">⌘⌥Space</kbd> to talk. Pause to end. Local Whisper, on-device.
+          Presiona <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white/70 font-mono text-[10px] mx-0.5">⌘⌥Space</kbd> para hablar. Pausa para terminar. Whisper local, en el dispositivo.
         </p>
       )}
     </div>

@@ -35,8 +35,8 @@ const SCENES: Scene[] = [
     name: "Intro",
     duration: 6800,
     cues: [
-      { at: 200, text: "I'm Andres, founder of Bubblio" },
-      { at: 3600, text: "Drop a live badge top right" },
+      { at: 200, text: "Soy Andres, fundador de Bubblio" },
+      { at: 3600, text: "Pon un badge en vivo arriba a la derecha" },
     ],
     actions: [
       {
@@ -46,7 +46,7 @@ const SCENES: Scene[] = [
           id: "lt-1",
           type: "LowerThird",
           position: "bottom-center",
-          props: { name: "Andres Carreon", subtitle: "Founder · Bubblio" },
+          props: { name: "Andres Carreon", subtitle: "Fundador · Bubblio" },
         },
       },
       {
@@ -56,7 +56,7 @@ const SCENES: Scene[] = [
           id: "lb-1",
           type: "LiveBadge",
           position: "top-right",
-          props: { label: "On Air", color: "red" },
+          props: { label: "En Vivo", color: "red" },
         },
       },
     ],
@@ -65,9 +65,9 @@ const SCENES: Scene[] = [
     name: "Numbers",
     duration: 9500,
     cues: [
-      { at: 200, text: "Q4 stats: revenue 1.8M, users 18K, churn 2.1%" },
-      { at: 4800, text: "Bump revenue to 2.1M" },
-      { at: 7200, text: "Launch readiness at 73%" },
+      { at: 200, text: "Métricas Q4: ingresos 1.8M, usuarios 18K, churn 2.1%" },
+      { at: 4800, text: "Sube los ingresos a 2.1M" },
+      { at: 7200, text: "Progreso de lanzamiento al 73%" },
     ],
     actions: [
       { at: 0, kind: "remove", id: "lb-1" },
@@ -82,8 +82,8 @@ const SCENES: Scene[] = [
           props: {
             title: "Q4 · 2026",
             metrics: [
-              { label: "Revenue", value: "$1.8M", delta: "+24%" },
-              { label: "Users", value: "18.2K", delta: "+12%" },
+              { label: "Ingresos", value: "$1.8M", delta: "+24%" },
+              { label: "Usuarios", value: "18.2K", delta: "+12%" },
               { label: "Churn", value: "2.1%", delta: "-0.4%" },
             ],
           },
@@ -100,7 +100,7 @@ const SCENES: Scene[] = [
             props: {
               ...o.props,
               metrics: o.props.metrics.map((m) =>
-                m.label === "Revenue" ? { ...m, value: "$2.1M", delta: "+33%" } : m
+                m.label === "Ingresos" ? { ...m, value: "$2.1M", delta: "+33%" } : m
               ),
             },
           };
@@ -113,7 +113,7 @@ const SCENES: Scene[] = [
           id: "pb-1",
           type: "ProgressBar",
           position: "top-center",
-          props: { progress: 73, label: "Launch readiness" },
+          props: { progress: 73, label: "Progreso de lanzamiento" },
         },
       },
     ],
@@ -122,9 +122,9 @@ const SCENES: Scene[] = [
     name: "Audience",
     duration: 8000,
     cues: [
-      { at: 200, text: "Big counter, twelve thousand viewers" },
-      { at: 3600, text: "Bump to twenty-four thousand eight hundred" },
-      { at: 5800, text: "Engagement ring at 87%" },
+      { at: 200, text: "Contador grande, doce mil espectadores" },
+      { at: 3600, text: "Sube a veinticuatro mil ochocientos" },
+      { at: 5800, text: "Anillo de engagement al 87%" },
     ],
     actions: [
       { at: 0, kind: "remove", id: "mp-1" },
@@ -136,7 +136,7 @@ const SCENES: Scene[] = [
           id: "bc-1",
           type: "BigCounter",
           position: "top-right",
-          props: { value: 12000, label: "viewers" },
+          props: { value: 12000, label: "espectadores" },
         },
       },
       {
@@ -162,8 +162,8 @@ const SCENES: Scene[] = [
     name: "Highlight",
     duration: 7000,
     cues: [
-      { at: 200, text: "Highlight: ai · agentic · live · ship" },
-      { at: 3500, text: "Add a ticker: voice to screen, broadcast-grade" },
+      { at: 200, text: "Resalta: ia · agéntico · en vivo · lanzado" },
+      { at: 3500, text: "Agrega un ticker: voz a pantalla, calidad broadcast" },
     ],
     actions: [
       { at: 0, kind: "remove", id: "bc-1" },
@@ -175,7 +175,7 @@ const SCENES: Scene[] = [
           id: "kh-1",
           type: "KeywordHighlight",
           position: "top-left",
-          props: { keywords: ["ai", "agentic", "live", "ship"], color: "auto" },
+          props: { keywords: ["ia", "agéntico", "en vivo", "lanzado"], color: "auto" },
         },
       },
       {
@@ -187,11 +187,11 @@ const SCENES: Scene[] = [
           position: "full-bottom",
           props: {
             items: [
-              "voice → screen",
-              "agentic UI",
-              "broadcast-grade",
-              "shipped solo",
-              "under 1s latency",
+              "voz → pantalla",
+              "UI agéntica",
+              "calidad broadcast",
+              "hecho solo",
+              "menos de 1s latencia",
             ],
             accent: "cyan",
           },
@@ -202,7 +202,7 @@ const SCENES: Scene[] = [
   {
     name: "Clear",
     duration: 3500,
-    cues: [{ at: 200, text: "Clear everything, fade them out" }],
+    cues: [{ at: 200, text: "Quita todo, desvanécelos" }],
     actions: [
       { at: 500, kind: "remove", id: "kh-1" },
       { at: 600, kind: "remove", id: "tk-1" },
@@ -312,7 +312,7 @@ export default function LiveDemo() {
         {/* Top chrome: camera ID + take + timecode + ON AIR */}
         <div className="absolute top-0 inset-x-0 h-10 z-30 flex items-center justify-between px-3 sm:px-4 border-b border-white/[0.04] bg-black/40 backdrop-blur-md">
           <div className="flex items-center gap-2 sm:gap-3 font-mono text-[9px] sm:text-[10px] tracking-[0.18em] uppercase text-[var(--studio-graphite)]">
-            <span>Your&nbsp;camera</span>
+            <span>Tu&nbsp;cámara</span>
             <span className="hidden sm:inline text-[var(--studio-fade)]">·</span>
             <span className="hidden sm:inline">Zoom · Teams · Meet</span>
           </div>
@@ -323,7 +323,7 @@ export default function LiveDemo() {
             <span className="flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-[var(--tally)] tally-pulse" />
               <span className="font-mono text-[9px] sm:text-[10px] tracking-[0.22em] uppercase text-[var(--tally)]">
-                On&nbsp;Air
+                En&nbsp;Vivo
               </span>
             </span>
           </div>
@@ -371,7 +371,7 @@ export default function LiveDemo() {
         <div className="absolute bottom-0 inset-x-0 h-12 z-30 flex items-center px-3 sm:px-4 border-t border-white/[0.04] bg-black/60 backdrop-blur-md">
           <span className="font-mono text-[var(--phosphor)] mr-2 sm:mr-3 text-base">›</span>
           <span className="font-mono text-[9px] sm:text-[10px] tracking-[0.22em] uppercase text-[var(--studio-fade)] mr-2 sm:mr-3">
-            voice
+            voz
           </span>
           <span className="font-mono text-[11px] sm:text-[13px] text-[var(--studio-ink)] truncate min-w-0">
             <CueText text={cue} />
@@ -400,10 +400,10 @@ export default function LiveDemo() {
       {/* External caption strip below card: gives context without crowding it */}
       <div className="mt-3 flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1.5 px-1">
         <span className="font-mono text-[10px] tracking-[0.22em] uppercase text-[var(--studio-fade)]">
-          A real session, on a loop · every graphic here lands from a spoken line
+          Una sesión real, en bucle · cada gráfico aquí viene de una línea hablada
         </span>
         <span className="font-mono text-[10px] tracking-[0.22em] uppercase text-[var(--studio-fade)]">
-          You speak · it appears
+          Tú hablas · aparece
         </span>
       </div>
     </div>

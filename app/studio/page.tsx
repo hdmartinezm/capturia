@@ -682,18 +682,18 @@ function Capturia({ vault, activeProvider, setActiveProvider }: CapturiaProps) {
             {/* Enter clean Program Output (for OBS / virtual camera) */}
             <button
               onClick={() => setOutputMode(true)}
-              title="Program Output for OBS / virtual camera (Cmd+Shift+O)"
+              title="Salida de programa para OBS / cámara virtual (Cmd+Shift+O)"
               className="text-[11px] font-mono uppercase tracking-widest px-3 py-1.5 rounded-full bg-white/10 text-white/60 hover:bg-white/20 hover:text-white border border-white/10 transition-all"
             >
-              Output
+              Salida
             </button>
 
             {/* Settings (desktop only) */}
             {vault.isDesktop && (
               <button
                 onClick={() => setSettingsOpen(true)}
-                title="Settings (Cmd+,)"
-                aria-label="Settings"
+                title="Configuración (Cmd+,)"
+                aria-label="Configuración"
                 className="w-8 h-8 flex items-center justify-center rounded-full bg-white/10 text-white/50 hover:bg-white/20 hover:text-white/90 border border-white/10 transition-all"
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
@@ -717,7 +717,7 @@ function Capturia({ vault, activeProvider, setActiveProvider }: CapturiaProps) {
                   isRecording ? "bg-white live-dot-pulse" : "bg-red-500"
                 }`}
               />
-              {isRecording ? "Stop" : "Rec"}
+              {isRecording ? "Parar" : "Grabar"}
             </button>
 
             {/* Live clock */}
@@ -729,7 +729,7 @@ function Capturia({ vault, activeProvider, setActiveProvider }: CapturiaProps) {
             <div className="flex items-center gap-1.5 bg-red-600/95 px-2.5 py-1 rounded-md shadow-[0_0_12px_rgba(239,68,68,0.4)] pointer-events-none">
               <span className="w-1.5 h-1.5 rounded-full bg-white live-dot-pulse" />
               <span className="text-white text-[10px] font-bold tracking-[0.2em] uppercase">
-                Live
+                En Vivo
               </span>
             </div>
           </div>
@@ -753,9 +753,9 @@ function Capturia({ vault, activeProvider, setActiveProvider }: CapturiaProps) {
         <button
           onClick={() => setOutputMode(false)}
           className="absolute top-3 right-3 z-30 text-[10px] font-mono uppercase tracking-widest px-2.5 py-1 rounded-full bg-black/50 text-white/40 border border-white/10 opacity-0 hover:opacity-100 transition-opacity"
-          title="Exit Program Output (Cmd+Shift+O)"
+          title="Salir de Salida de Programa (Cmd+Shift+O)"
         >
-          Exit output
+          Salir
         </button>
       )}
     </div>

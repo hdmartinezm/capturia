@@ -21,19 +21,19 @@ const PROVIDER_META: Record<
     name: "Google Gemini",
     tagline: "aistudio.google.com",
     url: "https://aistudio.google.com",
-    placeholder: "AIza... or your Google AI Studio key",
+    placeholder: "AIza... o tu llave de Google AI Studio",
   },
   claude: {
     name: "Anthropic Claude",
     tagline: "console.anthropic.com",
     url: "https://console.anthropic.com",
-    placeholder: "sk-ant-... key",
+    placeholder: "sk-ant-... llave",
   },
   openai: {
     name: "OpenAI",
     tagline: "platform.openai.com",
     url: "https://platform.openai.com",
-    placeholder: "sk-... key",
+    placeholder: "sk-... llave",
   },
 };
 
@@ -102,11 +102,11 @@ export default function SettingsModal({
       >
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
           <h2 className="text-white text-sm font-mono uppercase tracking-[0.2em]">
-            Settings
+            Configuración
           </h2>
           <button
             onClick={onClose}
-            aria-label="Close"
+            aria-label="Cerrar"
             className="text-white/40 hover:text-white text-2xl leading-none transition-colors"
           >
             ×
@@ -115,16 +115,16 @@ export default function SettingsModal({
 
         <div className="px-6 py-5">
           <div className="mb-1.5 text-white/40 text-[10px] font-mono uppercase tracking-[0.2em]">
-            BYOK API Keys
+            Llaves API BYOK
           </div>
           <p className="text-white/50 text-xs mb-5 leading-relaxed">
-            Bring your own LLM keys. Stored locally and encrypted via OS Keychain. Never sent to a Capturia server.
+            Trae tus propias llaves de IA. Almacenadas localmente y cifradas vía OS Keychain. Nunca enviadas a servidores de Capturia.
           </p>
 
           {isReady && keys.some((k) => k.has) && (
             <div className="mb-5">
               <div className="mb-2 text-white/40 text-[10px] font-mono uppercase tracking-[0.2em]">
-                Active model
+                Modelo activo
               </div>
               <div className="flex gap-2">
                 {PROVIDER_ORDER.map((provider) => {
@@ -142,7 +142,7 @@ export default function SettingsModal({
                           ? "bg-white/5 border-white/10 text-white/60 hover:bg-white/10 hover:text-white"
                           : "bg-white/[0.02] border-white/5 text-white/25 cursor-not-allowed"
                       }`}
-                      title={has ? `Use ${PROVIDER_META[provider].name}` : "Add a key first"}
+                      title={has ? `Usar ${PROVIDER_META[provider].name}` : "Agrega una llave primero"}
                     >
                       {PROVIDER_META[provider].name.split(" ").pop()}
                     </button>
@@ -150,13 +150,13 @@ export default function SettingsModal({
                 })}
               </div>
               <p className="mt-2 text-white/40 text-[11px] leading-relaxed">
-                Capturia runs every command on this key. Your key, your bill, on your machine.
+                Capturia ejecuta cada comando con esta llave. Tu llave, tu factura, en tu máquina.
               </p>
             </div>
           )}
 
           {!isReady && (
-            <div className="text-white/40 text-xs font-mono">Loading…</div>
+            <div className="text-white/40 text-xs font-mono">Cargando…</div>
           )}
 
           {isReady &&
@@ -193,7 +193,7 @@ export default function SettingsModal({
                         disabled={isBusy}
                         className="text-white/50 hover:text-red-400 text-xs font-mono px-3 py-2 rounded-lg transition-colors disabled:opacity-40"
                       >
-                        Clear
+                        Borrar
                       </button>
                     </div>
                   ) : (
@@ -216,7 +216,7 @@ export default function SettingsModal({
                         disabled={!draft.trim() || isBusy}
                         className="bg-blue-600 hover:bg-blue-500 disabled:opacity-30 disabled:cursor-not-allowed text-white text-xs font-medium px-4 py-2 rounded-lg transition-colors"
                       >
-                        {isBusy ? "Saving…" : "Save"}
+                        {isBusy ? "Guardando…" : "Guardar"}
                       </button>
                     </div>
                   )}
@@ -232,7 +232,7 @@ export default function SettingsModal({
         </div>
 
         <div className="px-6 py-3 border-t border-white/10 text-white/30 text-[10px] font-mono">
-          Esc to close. Cmd+, to reopen. Commands run on your selected key.
+          Esc para cerrar. Cmd+, para reabrir. Los comandos corren con tu llave seleccionada.
         </div>
       </div>
     </div>

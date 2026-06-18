@@ -19,11 +19,11 @@ export default function CueDeck({ cards, fileName, onTrigger, onClear }: Props) 
     <div className="absolute top-16 left-4 z-30 w-52 max-h-[60vh] flex flex-col rounded-xl bg-black/45 border border-white/10 backdrop-blur-md overflow-hidden">
       <div className="flex items-center justify-between px-3 py-2 border-b border-white/10">
         <span className="text-white/70 text-[10px] font-mono uppercase tracking-[0.18em] truncate" title={fileName ?? ""}>
-          {fileName ? fileName.replace(/\.pdf$/i, "") : "Cue deck"}
+          {fileName ? fileName.replace(/\.pdf$/i, "") : "Tarjetas"}
         </span>
         <button
           onClick={onClear}
-          aria-label="Clear deck"
+          aria-label="Limpiar tarjetas"
           className="text-white/30 hover:text-white/80 text-sm leading-none transition-colors"
         >
           ×
@@ -48,7 +48,7 @@ export default function CueDeck({ cards, fileName, onTrigger, onClear }: Props) 
             </div>
             {card.adapted && (
               <span className="text-[9px] font-mono text-[var(--amber-cue,#fcb454)]/80 uppercase tracking-wider">
-                adapted
+                adaptado
               </span>
             )}
           </button>
@@ -56,7 +56,7 @@ export default function CueDeck({ cards, fileName, onTrigger, onClear }: Props) 
       </div>
 
       <div className="px-3 py-1.5 border-t border-white/10 text-white/30 text-[9px] font-mono tracking-wider">
-        {validated}/{cards.length} cues ready · say a name or click
+        {validated}/{cards.length} listas · di un nombre o haz clic
       </div>
     </div>
   );
