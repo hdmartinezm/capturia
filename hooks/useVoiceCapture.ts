@@ -97,7 +97,7 @@ export function useVoiceCapture(
     const recognition = new SR();
     recognition.continuous = true;
     recognition.interimResults = true;
-    recognition.lang = "en-US";
+    recognition.lang = "es-MX";
 
     // Pipeline stages: each one logs so we know exactly where it breaks
     recognition.onstart = () => setSpeechStatus("started, waiting for audio…");
