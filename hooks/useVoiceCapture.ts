@@ -35,6 +35,7 @@ export function useVoiceCapture(
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const maxDurationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isRecordingRef = useRef(false);
 
   useEffect(() => {
@@ -66,6 +67,9 @@ export function useVoiceCapture(
       }
       if (silenceTimerRef.current) {
         clearTimeout(silenceTimerRef.current);
+      }
+      if (maxDurationTimerRef.current) {
+        clearTimeout(maxDurationTimerRef.current);
       }
     };
   }, []);
@@ -113,6 +117,11 @@ export function useVoiceCapture(
       silenceTimerRef.current = null;
     }
 
+    if (maxDurationTimerRef.current) {
+      clearTimeout(maxDurationTimerRef.current);
+      maxDurationTimerRef.current = null;
+    }
+
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
       mediaRecorderRef.current.stop();
     }
@@ -150,15 +159,17 @@ export function useVoiceCapture(
     const bars = Math.round(volume * 10);
     setInterimTranscript("█".repeat(bars) + "░".repeat(10 - bars));
 
-    // Silence threshold (adjust as needed)
-    const SILENCE_THRESHOLD = 0.02;
-    const SILENCE_DURATION = 1500; // 1.5 seconds of silence to stop
+    // Silence threshold - more aggressive detection
+    const SILENCE_THRESHOLD = 0.03; // Higher = more sensitive to silence
+    const SILENCE_DURATION = 800; // 0.8 seconds of silence to stop (was 1.5s)
 
     if (volume < SILENCE_THRESHOLD) {
+      // Show that we're detecting silence
+      setInterimTranscript("░░░░░░░░░░ silencio...");
       if (!silenceTimerRef.current) {
         silenceTimerRef.current = setTimeout(() => {
           if (isRecordingRef.current) {
-            setSpeechStatus("silencio detectado…");
+            setSpeechStatus("enviando…");
             stopRecording();
           }
         }, SILENCE_DURATION);
@@ -234,10 +245,18 @@ export function useVoiceCapture(
       mediaRecorder.start(100); // Collect data every 100ms
       isRecordingRef.current = true;
       setIsListening(true);
-      setSpeechStatus("escuchando… (habla y espera silencio)");
+      setSpeechStatus("escuchando… (pausa para enviar)");
 
       // Start silence detection
       checkSilence();
+
+      // Max recording duration fallback (15 seconds)
+      maxDurationTimerRef.current = setTimeout(() => {
+        if (isRecordingRef.current) {
+          setSpeechStatus("tiempo máximo alcanzado…");
+          stopRecording();
+        }
+      }, 15000);
 
     } catch (error) {
       const message = error instanceof Error ? error.message : "Error de micrófono";
