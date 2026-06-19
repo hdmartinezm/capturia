@@ -6,8 +6,14 @@ frontend:
         - npm ci
     build:
       commands:
-        # Create runtime config file with API key (will be bundled with SSR)
-        - echo "export const GEMINI_KEY = \"$GOOGLE_GENERATIVE_AI_API_KEY\";" > lib/runtime-config.ts
+        # Create runtime config file with API keys (will be bundled with SSR)
+        - |
+          cat > lib/runtime-config.ts << 'RUNTIME_EOF'
+          export const GEMINI_KEY = "$GOOGLE_GENERATIVE_AI_API_KEY";
+          export const OPENAI_KEY = "$OPENAI_API_KEY";
+          RUNTIME_EOF
+        - sed -i "s|\$GOOGLE_GENERATIVE_AI_API_KEY|$GOOGLE_GENERATIVE_AI_API_KEY|g" lib/runtime-config.ts
+        - sed -i "s|\$OPENAI_API_KEY|$OPENAI_API_KEY|g" lib/runtime-config.ts
         - npm run build
   artifacts:
     baseDirectory: .next
