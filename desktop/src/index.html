@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Capturia Desktop - Virtual Camera PoC</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0a0b0e;
+      color: #e0e0e0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .header {
+      padding: 16px 24px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      -webkit-app-region: drag;
+    }
+
+    .header h1 {
+      font-size: 18px;
+      font-weight: 600;
+      color: #52ff8b;
+    }
+
+    .status {
+      font-size: 12px;
+      padding: 4px 12px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.1);
+    }
+
+    .status.active {
+      background: rgba(82, 255, 139, 0.2);
+      color: #52ff8b;
+    }
+
+    .status.inactive {
+      background: rgba(255, 79, 79, 0.2);
+      color: #ff4f4f;
+    }
+
+    .main {
+      flex: 1;
+      display: flex;
+      padding: 24px;
+      gap: 24px;
+    }
+
+    .preview-section {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .preview-container {
+      position: relative;
+      aspect-ratio: 16/9;
+      background: #15181d;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    #preview-canvas {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .preview-overlay {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .fps-counter {
+      font-size: 11px;
+      font-family: monospace;
+      padding: 4px 8px;
+      background: rgba(0,0,0,0.6);
+      border-radius: 4px;
+    }
+
+    .controls {
+      width: 280px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .control-group {
+      background: #15181d;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    .control-group h3 {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #888;
+      margin-bottom: 12px;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      -webkit-app-region: no-drag;
+    }
+
+    button.primary {
+      background: #52ff8b;
+      color: #0a0b0e;
+    }
+
+    button.primary:hover {
+      background: #7fff9f;
+    }
+
+    button.secondary {
+      background: rgba(255,255,255,0.1);
+      color: #e0e0e0;
+    }
+
+    button.secondary:hover {
+      background: rgba(255,255,255,0.2);
+    }
+
+    button.danger {
+      background: rgba(255, 79, 79, 0.2);
+      color: #ff4f4f;
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .log-section {
+      margin-top: auto;
+    }
+
+    .log {
+      background: #0d0e11;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 6px;
+      padding: 12px;
+      font-family: monospace;
+      font-size: 11px;
+      height: 120px;
+      overflow-y: auto;
+    }
+
+    .log-entry {
+      color: #888;
+      margin-bottom: 4px;
+    }
+
+    .log-entry.success {
+      color: #52ff8b;
+    }
+
+    .log-entry.error {
+      color: #ff4f4f;
+    }
+
+    .test-pattern {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .test-pattern button {
+      flex: 1;
+      min-width: 80px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Capturia</h1>
+    <span id="camera-status" class="status inactive">Cámara: Inactiva</span>
+    <span id="platform-info" class="status">Cargando...</span>
+  </div>
+
+  <div class="main">
+    <div class="preview-section">
+      <div class="preview-container">
+        <canvas id="preview-canvas" width="1920" height="1080"></canvas>
+        <div class="preview-overlay">
+          <span id="fps-display" class="fps-counter">-- FPS</span>
+        </div>
+      </div>
+
+      <div class="log-section">
+        <div id="log" class="log"></div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <div class="control-group">
+        <h3>Cámara Virtual</h3>
+        <button id="btn-start" class="primary">Iniciar Cámara Virtual</button>
+        <button id="btn-stop" class="danger" style="margin-top: 8px;" disabled>Detener</button>
+      </div>
+
+      <div class="control-group">
+        <h3>Patrón de Prueba</h3>
+        <div class="test-pattern">
+          <button id="btn-gradient" class="secondary">Gradiente</button>
+          <button id="btn-bars" class="secondary">Barras</button>
+          <button id="btn-animated" class="secondary">Animado</button>
+        </div>
+      </div>
+
+      <div class="control-group">
+        <h3>Instrucciones</h3>
+        <ol style="font-size: 12px; color: #888; padding-left: 16px; line-height: 1.6;">
+          <li>Inicia la cámara virtual</li>
+          <li>Genera un patrón de prueba</li>
+          <li>Abre Zoom/Teams/Meet</li>
+          <li>Selecciona "Capturia Camera"</li>
+          <li>¡Verás el patrón en tu llamada!</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('preview-canvas');
+    const ctx = canvas.getContext('2d');
+    const log = document.getElementById('log');
+    const fpsDisplay = document.getElementById('fps-display');
+    const cameraStatus = document.getElementById('camera-status');
+    const platformInfo = document.getElementById('platform-info');
+    const btnStart = document.getElementById('btn-start');
+    const btnStop = document.getElementById('btn-stop');
+
+    let isRunning = false;
+    let animationId = null;
+    let lastFrameTime = 0;
+    let frameCount = 0;
+    let fps = 0;
+
+    // Log helper
+    function addLog(message, type = 'info') {
+      const entry = document.createElement('div');
+      entry.className = `log-entry ${type}`;
+      entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+      log.appendChild(entry);
+      log.scrollTop = log.scrollHeight;
+    }
+
+    // Initialize
+    async function init() {
+      if (window.capturia) {
+        platformInfo.textContent = `Plataforma: ${window.capturia.platform}`;
+        addLog('Capturia Desktop iniciado', 'success');
+      } else {
+        platformInfo.textContent = 'Modo: Navegador (demo)';
+        addLog('Ejecutando en modo navegador (sin cámara virtual)', 'info');
+      }
+
+      // Fill canvas with initial pattern
+      drawGradient();
+    }
+
+    // Draw gradient pattern
+    function drawGradient() {
+      const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+      gradient.addColorStop(0, '#52ff8b');
+      gradient.addColorStop(0.5, '#22d3ee');
+      gradient.addColorStop(1, '#ff4fc3');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Add text
+      ctx.fillStyle = 'white';
+      ctx.font = 'bold 72px -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('CAPTURIA', canvas.width / 2, canvas.height / 2 - 20);
+      ctx.font = '36px -apple-system, sans-serif';
+      ctx.fillText('Virtual Camera PoC', canvas.width / 2, canvas.height / 2 + 40);
+
+      sendFrame();
+    }
+
+    // Draw color bars pattern
+    function drawColorBars() {
+      const colors = ['#ffffff', '#ffff00', '#00ffff', '#00ff00', '#ff00ff', '#ff0000', '#0000ff', '#000000'];
+      const barWidth = canvas.width / colors.length;
+
+      colors.forEach((color, i) => {
+        ctx.fillStyle = color;
+        ctx.fillRect(i * barWidth, 0, barWidth, canvas.height);
+      });
+
+      sendFrame();
+    }
+
+    // Draw animated pattern
+    function drawAnimated() {
+      if (!isRunning) return;
+
+      const now = performance.now();
+      const elapsed = now - lastFrameTime;
+
+      // Calculate FPS
+      frameCount++;
+      if (elapsed >= 1000) {
+        fps = Math.round((frameCount * 1000) / elapsed);
+        fpsDisplay.textContent = `${fps} FPS`;
+        frameCount = 0;
+        lastFrameTime = now;
+      }
+
+      // Clear
+      ctx.fillStyle = '#0a0b0e';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Moving gradient bar
+      const barX = ((now / 20) % (canvas.width + 200)) - 100;
+      const gradient = ctx.createLinearGradient(barX - 100, 0, barX + 100, 0);
+      gradient.addColorStop(0, 'transparent');
+      gradient.addColorStop(0.5, '#52ff8b');
+      gradient.addColorStop(1, 'transparent');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Timestamp
+      ctx.fillStyle = 'white';
+      ctx.font = '48px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(new Date().toLocaleTimeString(), canvas.width / 2, canvas.height / 2);
+
+      // Send frame to virtual camera
+      sendFrame();
+
+      animationId = requestAnimationFrame(drawAnimated);
+    }
+
+    // Send current canvas frame to virtual camera
+    async function sendFrame() {
+      if (!window.capturia || !isRunning) return;
+
+      try {
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        await window.capturia.virtualCamera.sendFrame({
+          data: Array.from(imageData.data),
+          width: canvas.width,
+          height: canvas.height
+        });
+      } catch (error) {
+        console.error('Error sending frame:', error);
+      }
+    }
+
+    // Start virtual camera
+    btnStart.addEventListener('click', async () => {
+      addLog('Iniciando cámara virtual...');
+
+      if (window.capturia) {
+        const result = await window.capturia.virtualCamera.init();
+        if (result.success) {
+          addLog('Cámara virtual iniciada', 'success');
+          isRunning = true;
+          cameraStatus.textContent = 'Cámara: Activa';
+          cameraStatus.className = 'status active';
+          btnStart.disabled = true;
+          btnStop.disabled = false;
+          lastFrameTime = performance.now();
+        } else {
+          addLog(`Error: ${result.error}`, 'error');
+        }
+      } else {
+        addLog('Modo demo - sin cámara real', 'info');
+        isRunning = true;
+        cameraStatus.textContent = 'Cámara: Demo';
+        cameraStatus.className = 'status active';
+        btnStart.disabled = true;
+        btnStop.disabled = false;
+        lastFrameTime = performance.now();
+      }
+    });
+
+    // Stop virtual camera
+    btnStop.addEventListener('click', async () => {
+      addLog('Deteniendo cámara virtual...');
+      isRunning = false;
+
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+        animationId = null;
+      }
+
+      if (window.capturia) {
+        await window.capturia.virtualCamera.stop();
+      }
+
+      cameraStatus.textContent = 'Cámara: Inactiva';
+      cameraStatus.className = 'status inactive';
+      btnStart.disabled = false;
+      btnStop.disabled = true;
+      fpsDisplay.textContent = '-- FPS';
+      addLog('Cámara virtual detenida', 'success');
+    });
+
+    // Pattern buttons
+    document.getElementById('btn-gradient').addEventListener('click', () => {
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+        animationId = null;
+      }
+      drawGradient();
+      addLog('Patrón: Gradiente');
+    });
+
+    document.getElementById('btn-bars').addEventListener('click', () => {
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+        animationId = null;
+      }
+      drawColorBars();
+      addLog('Patrón: Barras de color');
+    });
+
+    document.getElementById('btn-animated').addEventListener('click', () => {
+      if (!isRunning) {
+        addLog('Primero inicia la cámara virtual', 'error');
+        return;
+      }
+      addLog('Patrón: Animado (30fps)');
+      drawAnimated();
+    });
+
+    // Initialize on load
+    init();
+  </script>
+</body>
+</html>
