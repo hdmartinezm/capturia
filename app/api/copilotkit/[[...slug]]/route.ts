@@ -25,6 +25,15 @@ function buildAgent(provider: string, apiKey: string | undefined) {
   // CAPTURIA_MODEL lets a self-hoster pin an exact model spec (e.g.
   // "anthropic/claude-haiku-4-5-20251001") regardless of the provider default.
   const model = process.env.CAPTURIA_MODEL || PROVIDER_MODELS[provider] || PROVIDER_MODELS.gemini;
+
+  // Debug logging
+  console.log("[Capturia] Building agent:", {
+    provider,
+    model,
+    hasApiKey: !!apiKey,
+    apiKeyPrefix: apiKey ? apiKey.substring(0, 8) + "..." : "none",
+  });
+
   return new BuiltInAgent({
     model,
     // Per-request user key (BYOK). undefined => resolveModel falls back to the
@@ -52,12 +61,23 @@ const runtime = new CopilotRuntime({
   agents: ({ request }) => {
     const byokProvider = request.headers.get("x-capturia-provider");
     const byokKey = request.headers.get("x-capturia-key") || undefined;
+
+    console.log("[Capturia] Request received:", {
+      hasByokProvider: !!byokProvider,
+      hasByokKey: !!byokKey,
+      envProvider: process.env.CAPTURIA_PROVIDER || "gemini (default)",
+      hasEnvKey: !!process.env.GOOGLE_GENERATIVE_AI_API_KEY,
+    });
+
     if (byokProvider && byokKey) {
+      console.log("[Capturia] Using BYOK:", byokProvider);
       return { default: buildAgent(byokProvider, byokKey) };
     }
     const provider = process.env.CAPTURIA_PROVIDER || "gemini";
     const envKey =
       provider === "gemini" ? process.env.GOOGLE_GENERATIVE_AI_API_KEY : undefined;
+
+    console.log("[Capturia] Using env key for provider:", provider, "hasKey:", !!envKey);
     return { default: buildAgent(provider, envKey) };
   },
   runner: new InMemoryAgentRunner(),
