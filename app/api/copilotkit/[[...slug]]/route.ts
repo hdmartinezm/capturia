@@ -5,6 +5,7 @@ import {
   BuiltInAgent,
 } from "@copilotkit/runtime/v2";
 import { SYSTEM_PROMPT } from "@/lib/system-prompt";
+import { GEMINI_KEY } from "@/lib/runtime-config";
 
 // Provider → model specifier. CopilotKit's resolveModel() builds the right
 // @ai-sdk provider from the "provider/model" string plus the per-request
@@ -67,6 +68,8 @@ const runtime = new CopilotRuntime({
       hasByokKey: !!byokKey,
       envProvider: process.env.CAPTURIA_PROVIDER || "gemini (default)",
       hasEnvKey: !!process.env.GOOGLE_GENERATIVE_AI_API_KEY,
+      hasBuildTimeKey: !!GEMINI_KEY,
+      buildTimeKeyPrefix: GEMINI_KEY ? GEMINI_KEY.substring(0, 8) + "..." : "none",
     });
 
     if (byokProvider && byokKey) {
@@ -74,8 +77,9 @@ const runtime = new CopilotRuntime({
       return { default: buildAgent(byokProvider, byokKey) };
     }
     const provider = process.env.CAPTURIA_PROVIDER || "gemini";
+    // GEMINI_KEY is injected at build time by amplify.yml (SSR doesn't see env vars at runtime)
     const envKey =
-      provider === "gemini" ? process.env.GOOGLE_GENERATIVE_AI_API_KEY : undefined;
+      provider === "gemini" ? (GEMINI_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY) : undefined;
 
     console.log("[Capturia] Using env key for provider:", provider, "hasKey:", !!envKey);
     return { default: buildAgent(provider, envKey) };
