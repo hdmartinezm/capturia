@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
-import { OPENAI_KEY } from "@/lib/runtime-config";
+import { GROQ_KEY } from "@/lib/runtime-config";
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,27 +14,31 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // OPENAI_KEY is injected at build time by amplify.yml
-    const apiKey = OPENAI_KEY || process.env.OPENAI_API_KEY;
+    // GROQ_KEY is injected at build time by amplify.yml
+    const apiKey = GROQ_KEY || process.env.GROQ_API_KEY;
     if (!apiKey) {
-      console.error("[Whisper] No OpenAI API key configured");
+      console.error("[Whisper] No Groq API key configured");
       return NextResponse.json(
-        { error: "OpenAI API key not configured" },
+        { error: "Groq API key not configured" },
         { status: 500 }
       );
     }
 
-    console.log("[Whisper] Processing audio:", {
+    console.log("[Whisper] Processing audio with Groq:", {
       size: audioFile.size,
       type: audioFile.type,
       hasKey: !!apiKey,
     });
 
-    const openai = new OpenAI({ apiKey });
+    // Use Groq's OpenAI-compatible API
+    const groq = new OpenAI({
+      apiKey,
+      baseURL: "https://api.groq.com/openai/v1",
+    });
 
-    const transcription = await openai.audio.transcriptions.create({
+    const transcription = await groq.audio.transcriptions.create({
       file: audioFile,
-      model: "whisper-1",
+      model: "whisper-large-v3", // Groq's Whisper model
       language: "es", // Spanish
       response_format: "text",
     });

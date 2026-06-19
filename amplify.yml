@@ -10,10 +10,10 @@ frontend:
         - |
           cat > lib/runtime-config.ts << 'RUNTIME_EOF'
           export const GEMINI_KEY = "$GOOGLE_GENERATIVE_AI_API_KEY";
-          export const OPENAI_KEY = "$OPENAI_API_KEY";
+          export const GROQ_KEY = "$GROQ_API_KEY";
           RUNTIME_EOF
         - sed -i "s|\$GOOGLE_GENERATIVE_AI_API_KEY|$GOOGLE_GENERATIVE_AI_API_KEY|g" lib/runtime-config.ts
-        - sed -i "s|\$OPENAI_API_KEY|$OPENAI_API_KEY|g" lib/runtime-config.ts
+        - sed -i "s|\$GROQ_API_KEY|$GROQ_API_KEY|g" lib/runtime-config.ts
         - npm run build
   artifacts:
     baseDirectory: .next
