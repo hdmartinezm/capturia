@@ -9,6 +9,10 @@ frontend:
         # Create runtime config file with API key (will be bundled with SSR)
         - echo "export const GEMINI_KEY = \"$GOOGLE_GENERATIVE_AI_API_KEY\";" > lib/runtime-config.ts
         - npm run build
+  artifacts:
+    baseDirectory: .next
+    files:
+      - '**/*'
   cache:
     paths:
       - node_modules/**/*
